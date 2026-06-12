@@ -45,7 +45,7 @@ export async function createSession(user: Pick<User, "id" | "role">) {
 export function setAuthCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
   const common = {
     httpOnly: true,
-    sameSite: "strict" as const,
+    sameSite: "none" as const,
     secure: isProduction,
     path: "/"
   };

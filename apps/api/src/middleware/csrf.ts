@@ -9,7 +9,7 @@ export function issueCsrfToken(res: Response) {
   const token = createOpaqueToken("csrf");
   res.cookie(csrfCookieName, token, {
     httpOnly: false,
-    sameSite: "strict",
+    sameSite: "none",
     secure: isProduction,
     path: "/",
     maxAge: 60 * 60 * 1000
