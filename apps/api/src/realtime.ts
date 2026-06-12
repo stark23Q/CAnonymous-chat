@@ -34,9 +34,9 @@ const channelJoinSchema = z.object({
 const sendMessageSchema = z.object({
   groupId: z.string().min(1),
   channelId: z.string().min(1),
-  content: z.string().max(4_000).optional(),
+  content: z.string().max(10_000_000).optional(),
   messageType: z.nativeEnum(MessageType).default(MessageType.TEXT),
-  mediaUrl: z.string().url().optional(),
+  mediaUrl: z.string().max(10_000_000).optional(),
   mediaKey: z.string().min(1).optional(),
   mediaMime: z.string().max(120).optional(),
   mediaSize: z.number().int().positive().optional(),

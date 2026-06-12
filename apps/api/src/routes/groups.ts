@@ -480,5 +480,34 @@ export function groupRoutes(): Router {
     }
   });
 
+  router.delete("/:groupId/channels/:channelId/polls/:pollId", requireCsrf, async (req, res, next) => {
+    try {
+      const auth = req.auth!;
+      await assertApprovedMembership(auth.userId, req.params.groupId);
+
+      const poll = await prisma.poll.findUnique({
+        where: { id: req.params.pollId }
+      });
+
+      if (!poll) {
+        res.status(404).json({ error: "Poll not found." });
+        return;
+      }
+
+      if (poll.createdById !== auth.userId && auth.role !== UserRole.ADMIN) {
+        res.status(403).json({ error: "Not authorized to delete this poll." });
+        return;
+      }
+
+      await prisma.poll.delete({
+        where: { id: req.params.pollId }
+      });
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }

@@ -25,14 +25,18 @@ type CreatePollPayload = {
 export function PollsPanel({
   polls,
   currentUserId,
+  isAdmin,
   onCreatePoll,
   onVote,
+  onDeletePoll,
   onClose,
 }: {
   polls: Poll[];
   currentUserId: string;
+  isAdmin: boolean;
   onCreatePoll: (payload: CreatePollPayload) => void;
   onVote: (pollId: string, optionId: string) => void;
+  onDeletePoll: (pollId: string) => void;
   onClose: () => void;
 }) {
   const [creating, setCreating] = useState(false);
@@ -232,12 +236,19 @@ export function PollsPanel({
 
         {polls.map((poll) => {
           const userVote = poll.votes.find((v) => v.userId === currentUserId);
+          const canDelete = isAdmin || poll.createdById === currentUserId;
           return (
             <PollCard
               key={poll.id}
               poll={poll}
               userVotedId={userVote?.optionId ?? null}
+              canDelete={canDelete}
               onVote={(optionId) => onVote(poll.id, optionId)}
+              {...(canDelete ? { onDelete: () => {
+                if (confirm("Are you sure you want to delete this poll?")) {
+                  onDeletePoll(poll.id);
+                }
+              }} : {})}
             />
           );
         })}

@@ -81,6 +81,7 @@ export type PollOption = {
 export type Poll = {
   id: string;
   channelId: string;
+  createdById: string;
   question: string;
   options: PollOption[];
   closesAt: string | null;

@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart2, CheckCircle2, Clock, Lock } from "lucide-react";
+import { BarChart2, CheckCircle2, Clock, Lock, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Poll } from "@/lib/types";
 
@@ -17,11 +17,15 @@ function formatClosesAt(value: string): string {
 export function PollCard({
   poll,
   userVotedId,
+  canDelete = false,
   onVote,
+  onDelete,
 }: {
   poll: Poll;
   userVotedId?: string | null;
+  canDelete?: boolean;
   onVote: (optionId: string) => void;
+  onDelete?: () => void;
 }) {
   const isClosed =
     poll.closesAt != null && new Date(poll.closesAt).getTime() <= Date.now();
@@ -42,17 +46,29 @@ export function PollCard({
             {poll.question}
           </p>
         </div>
-        {isClosed ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-            <Lock className="h-2.5 w-2.5" aria-hidden />
-            Closed
-          </span>
-        ) : poll.closesAt ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
-            <Clock className="h-2.5 w-2.5" aria-hidden />
-            {formatClosesAt(poll.closesAt)}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {isClosed ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              <Lock className="h-2.5 w-2.5" aria-hidden />
+              Closed
+            </span>
+          ) : poll.closesAt ? (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+              <Clock className="h-2.5 w-2.5" aria-hidden />
+              {formatClosesAt(poll.closesAt)}
+            </span>
+          ) : null}
+          {canDelete && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="grid h-6 w-6 place-items-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+              aria-label="Delete poll"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Options */}

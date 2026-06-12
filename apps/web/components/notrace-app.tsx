@@ -150,6 +150,9 @@ export function NoTraceApp() {
   // Rename Dialogs
   const [channelDialog, setChannelDialog] = useState<{ open: boolean; mode: "CREATE" | "RENAME"; channelId?: string; name: string }>({ open: false, mode: "CREATE", name: "" });
   const [groupRenameDialog, setGroupRenameDialog] = useState<{ open: boolean; groupId: string; name: string }>({ open: false, groupId: "", name: "" });
+  
+  // Custom Context Menu State
+  const [contextMenu, setContextMenu] = useState<{ open: boolean; x: number; y: number; communityId?: string; name?: string }>({ open: false, x: 0, y: 0 });
 
   const { socket, connected } = useSocket(accessToken);
   const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
@@ -485,7 +488,7 @@ export function NoTraceApp() {
     }
   };
 
-  const sendMessage = (content: string, kind: "TEXT" | "MEME" | "FILE" = "TEXT", expiresInSeconds?: number | null) => {
+  const sendMessage = (content: string, kind: "TEXT" | "MEME" | "FILE" = "TEXT", expiresInSeconds?: number | null, fileMeta?: { size: number; mime: string; name: string }) => {
     const payload = {
       groupId: selectedCommunity.id,
       channelId: selectedChannel.id,
@@ -495,8 +498,8 @@ export function NoTraceApp() {
         kind === "MEME"
           ? content
           : undefined,
-      mediaMime: kind === "FILE" ? "application/pdf" : kind === "MEME" ? "image/jpeg" : undefined,
-      mediaSize: kind === "FILE" ? 620_000 : kind === "MEME" ? 420_000 : undefined,
+      mediaMime: kind === "FILE" ? fileMeta?.mime || "application/octet-stream" : kind === "MEME" ? "image/jpeg" : undefined,
+      mediaSize: kind === "FILE" ? fileMeta?.size || 0 : kind === "MEME" ? 420_000 : undefined,
       replyToId: replyTo?.id,
       expiresInSeconds: expiresInSeconds ?? undefined,
       clientId: `web-${Date.now()}`
@@ -578,6 +581,19 @@ export function NoTraceApp() {
       if (selectedCommunity) await loadPolls(selectedCommunity.id);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Vote failed.");
+    }
+  };
+
+  const deletePoll = async (pollId: string) => {
+    if (!selectedCommunity || !selectedChannel) return;
+    try {
+      await apiFetch(`/api/groups/${selectedCommunity.id}/channels/${selectedChannel.id}/polls/${pollId}`, {
+        method: "DELETE"
+      });
+      setPolls(prev => prev.filter(p => p.id !== pollId));
+      setNotice("Poll deleted.");
+    } catch (error) {
+      setNotice("Failed to delete poll.");
     }
   };
 
@@ -824,13 +840,13 @@ export function NoTraceApp() {
                     onContextMenu={(e) => {
                       e.preventDefault();
                       if (community.id === "DM" || community.id.startsWith("dm_")) {
-                        setNotice("Cannot rename DM groups.");
+                        setNotice("Cannot modify DM groups.");
                         return;
                       }
                       if (user?.role === "ADMIN" || community.createdById === user?.id) {
-                        setGroupRenameDialog({ open: true, groupId: community.id, name: community.name });
+                        setContextMenu({ open: true, x: e.clientX, y: e.clientY, communityId: community.id, name: community.name });
                       } else {
-                        setNotice("Only admins can rename this group.");
+                        setNotice("Only admins can manage this group.");
                       }
                     }}
                     className={cn(
@@ -1026,14 +1042,16 @@ export function NoTraceApp() {
                     onClose={() => setShowConfessions(false)}
                   />
                 </div>
-              ) : showPolls ? (
+              ) : showPolls && user ? (
                 <div className="flex-1 overflow-hidden bg-background/50">
                   <PollsPanel
                     polls={polls}
+                    currentUserId={user.id}
+                    isAdmin={user.role === "ADMIN"}
+                    onCreatePoll={createPoll}
+                    onVote={votePoll}
+                    onDeletePoll={deletePoll}
                     onClose={() => setShowPolls(false)}
-                    onCreatePoll={(payload) => void createPoll(payload)}
-                    onVote={(p, o) => void votePoll(p, o)}
-                    currentUserId={user?.id}
                   />
                 </div>
               ) : showQA ? (
@@ -1186,6 +1204,55 @@ export function NoTraceApp() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {/* Group Context Menu */}
+      {contextMenu.open && (
+        <>
+          <div 
+            className="fixed inset-0 z-50" 
+            onClick={() => setContextMenu({ open: false, x: 0, y: 0 })}
+            onContextMenu={(e) => { e.preventDefault(); setContextMenu({ open: false, x: 0, y: 0 }); }}
+          />
+          <div 
+            className="fixed z-50 w-48 bg-black/90 border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 backdrop-blur-xl"
+            style={{ top: contextMenu.y, left: contextMenu.x }}
+          >
+            <button 
+              className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-white/10 transition-colors"
+              onClick={() => {
+                setContextMenu({ open: false, x: 0, y: 0 });
+                if (contextMenu.communityId && contextMenu.name) {
+                  setGroupRenameDialog({ open: true, groupId: contextMenu.communityId, name: contextMenu.name });
+                }
+              }}
+            >
+              Rename Group
+            </button>
+            <button 
+              className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              onClick={async () => {
+                setContextMenu({ open: false, x: 0, y: 0 });
+                if (contextMenu.communityId) {
+                  if (confirm("Are you sure you want to delete this group forever?")) {
+                    try {
+                      await apiFetch(`/api/admin/groups/${contextMenu.communityId}`, { method: "DELETE" });
+                      setCommunities(prev => prev.filter(c => c.id !== contextMenu.communityId));
+                      if (selectedCommunityId === contextMenu.communityId) {
+                        setSelectedCommunityId(communities[0]?.id || "");
+                      }
+                      setNotice("Group deleted successfully.");
+                    } catch (err) {
+                      setNotice("Failed to delete group.");
+                    }
+                  }
+                }
+              }}
+            >
+              Delete Group
+            </button>
+          </div>
+        </>
+      )}
     </TooltipProvider>
   );
 }

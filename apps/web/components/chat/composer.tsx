@@ -46,7 +46,7 @@ export function Composer({
   channelName: string;
   replyTo: ChatMessage | null;
   onCancelReply: () => void;
-  onSend: (content: string, kind?: "TEXT" | "MEME" | "FILE", expiresInSeconds?: number | null) => void;
+  onSend: (content: string, kind?: "TEXT" | "MEME" | "FILE", expiresInSeconds?: number | null, fileMeta?: { size: number; mime: string; name: string }) => void;
   onConfess?: (content: string) => void;
   onTyping: (isTyping: boolean) => void;
   forceConfessionMode?: boolean;
@@ -58,6 +58,7 @@ export function Composer({
   const [isMemeDialogOpen, setIsMemeDialogOpen] = useState(false);
   const [memeUrlInput, setMemeUrlInput] = useState("");
   const typingTimeout = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isConfession = forceConfessionMode || isConfessionState;
 
@@ -91,6 +92,29 @@ export function Composer({
       setIsMemeDialogOpen(false);
       setMemeUrlInput("");
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File is too large! Maximum size is 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      onSend(base64, "FILE", expiresInSeconds, {
+        size: file.size,
+        mime: file.type || "application/octet-stream",
+        name: file.name
+      });
+    };
+    reader.readAsDataURL(file);
+
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleTyping = (next: string) => {
@@ -187,12 +211,19 @@ export function Composer({
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => send("FILE")}>
+                  <Button type="button" variant="ghost" size="iconSm" onClick={() => fileInputRef.current?.click()}>
                     <FileUp className="h-4 w-4" aria-hidden />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Upload file</TooltipContent>
               </Tooltip>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*,application/pdf,text/plain"
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button type="button" variant="ghost" size="iconSm" onClick={() => setIsMemeDialogOpen(true)}>
