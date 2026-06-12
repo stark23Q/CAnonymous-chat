@@ -74,6 +74,9 @@ export function AccessPortal({
         method: "POST",
         body: JSON.stringify({ recoveryPhrase })
       });
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("notrace_recovery", recoveryPhrase);
+      }
       onAuthenticated(res.accessToken, res.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to recover session.");
