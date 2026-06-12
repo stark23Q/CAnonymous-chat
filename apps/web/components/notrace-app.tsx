@@ -374,10 +374,24 @@ export function NoTraceApp() {
             if (!active) {
               return;
             }
-            setUser(data.user);
+            // Restore recovery phrase from local storage if cached
+            const cachedRecovery = typeof window !== "undefined" ? window.localStorage.getItem("notrace_recovery") : null;
+            const showWelcome = typeof window !== "undefined" ? window.localStorage.getItem("notrace_show_welcome") : null;
+
+            const userData: NoTraceUser = { ...data.user };
+            if (cachedRecovery) {
+              userData.recoveryPhrase = cachedRecovery;
+            }
+            setUser(userData);
             setAccessToken(token);
+
+            if (showWelcome === "true" && cachedRecovery) {
+              setWelcomePhrase(cachedRecovery);
+              window.localStorage.removeItem("notrace_show_welcome");
+            }
           } catch {
             window.localStorage.removeItem("notrace_access");
+            window.localStorage.removeItem("notrace_recovery");
             token = null;
           }
         }
@@ -998,6 +1012,7 @@ export function NoTraceApp() {
 
   const handleLogout = () => {
     window.localStorage.removeItem("notrace_access");
+    window.localStorage.removeItem("notrace_recovery");
     setAccessToken(null);
     setUser(null);
     window.location.reload();
@@ -1103,10 +1118,11 @@ export function NoTraceApp() {
           onAuthenticated={(token, usr) => {
             window.localStorage.setItem("notrace_access", token);
             setAccessToken(token);
-            setUser(usr);
             if (usr.recoveryPhrase) {
+              window.localStorage.setItem("notrace_recovery", usr.recoveryPhrase);
               setWelcomePhrase(usr.recoveryPhrase);
             }
+            setUser(usr);
           }}
         />
       ) : (
@@ -1500,7 +1516,7 @@ export function NoTraceApp() {
       )}
 
       {/* Channel Dialog */}
-      <Dialog open={channelDialog.open} onOpenChange={(open) => setChannelDialog(prev => ({ ...prev, open }))}>
+      <Dialog open={channelDialog.open} onOpenChange={(open: boolean) => setChannelDialog(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-md bg-card/90 border-border backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>{channelDialog.mode === "CREATE" ? "Create New Channel" : "Rename Channel"}</DialogTitle>
@@ -1525,7 +1541,7 @@ export function NoTraceApp() {
       </Dialog>
 
       {/* Group Rename Dialog */}
-      <Dialog open={groupRenameDialog.open} onOpenChange={(open) => setGroupRenameDialog(prev => ({ ...prev, open }))}>
+      <Dialog open={groupRenameDialog.open} onOpenChange={(open: boolean) => setGroupRenameDialog(prev => ({ ...prev, open }))}>
         <DialogContent className="sm:max-w-md bg-card/90 border-border backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Rename Group</DialogTitle>

@@ -59,12 +59,16 @@ function JoinPageContent() {
         if (status === "APPROVED") {
           clearInterval(pollInterval);
           // Claim the token immediately
-          const claimRes = await apiFetch<{ accessToken: string }>("/api/auth/join/claim", {
+          const claimRes = await apiFetch<{ accessToken: string; user: { recoveryPhrase?: string } }>("/api/auth/join/claim", {
             method: "POST",
             body: JSON.stringify({ token: pollingInfo.claimToken })
           });
           if (active) {
             window.localStorage.setItem("notrace_access", claimRes.accessToken);
+            if (claimRes.user?.recoveryPhrase) {
+              window.localStorage.setItem("notrace_recovery", claimRes.user.recoveryPhrase);
+              window.localStorage.setItem("notrace_show_welcome", "true");
+            }
             router.push("/");
           }
         }

@@ -71,6 +71,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, isRetry 
         } else {
           if (typeof window !== "undefined") {
             window.localStorage.removeItem("notrace_access");
+            window.localStorage.removeItem("notrace_recovery");
             window.location.reload();
           }
         }

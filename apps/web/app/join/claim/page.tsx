@@ -27,7 +27,7 @@ function ClaimContent() {
 
     async function claimToken() {
       try {
-        const response = await apiFetch<{ accessToken: string }>("/api/auth/join/claim", {
+        const response = await apiFetch<{ accessToken: string; user: { recoveryPhrase?: string } }>("/api/auth/join/claim", {
           method: "POST",
           body: JSON.stringify({ token })
         });
@@ -35,6 +35,10 @@ function ClaimContent() {
         if (!active) return;
 
         window.localStorage.setItem("notrace_access", response.accessToken);
+        if (response.user?.recoveryPhrase) {
+          window.localStorage.setItem("notrace_recovery", response.user.recoveryPhrase);
+          window.localStorage.setItem("notrace_show_welcome", "true");
+        }
         setStatus("success");
         setTimeout(() => {
           if (active) {
