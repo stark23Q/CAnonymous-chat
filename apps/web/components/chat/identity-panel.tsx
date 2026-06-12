@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 type CurrentUser = {
   anonymousName: string;
   avatarSeed: string;
-  recoveryPhrase?: string;
+  recoveryPhrase?: string | null | undefined;
 };
 
 type IdentityPanelProps = {
