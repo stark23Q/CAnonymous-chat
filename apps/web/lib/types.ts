@@ -26,6 +26,7 @@ export type NoTraceUser = {
   anonymousName: string;
   avatarSeed: string;
   role: "ADMIN" | "MEMBER";
+  recoveryPhrase?: string;
 };
 
 export type AnonymousAuthor = {

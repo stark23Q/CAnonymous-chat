@@ -16,8 +16,10 @@ export function AccessPortal({
   const [inviteToken, setInviteToken] = useState("");
   const [customName, setCustomName] = useState("");
   const [password, setPassword] = useState("");
+  const [recoveryPhrase, setRecoveryPhrase] = useState("");
   const [userLoading, setUserLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleJoin = async (e: React.FormEvent) => {
@@ -61,6 +63,25 @@ export function AccessPortal({
     }
   };
 
+  const handleRecoveryLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryPhrase) return;
+    setRecoveryLoading(true);
+    setError(null);
+
+    try {
+      const res = await apiFetch<{ accessToken: string; user: NoTraceUser }>("/api/auth/recovery-login", {
+        method: "POST",
+        body: JSON.stringify({ recoveryPhrase })
+      });
+      onAuthenticated(res.accessToken, res.user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to recover session.");
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-dvh w-full items-center justify-center bg-[#050505] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] text-foreground p-4">
       <div className="w-full max-w-md relative">
@@ -80,12 +101,15 @@ export function AccessPortal({
           </div>
 
           <Tabs defaultValue="join" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/5 p-1 rounded-xl mb-6">
+            <TabsList className="grid w-full grid-cols-3 bg-white/5 p-1 rounded-xl mb-6">
               <TabsTrigger value="join" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all">
-                Join Room
+                Join
+              </TabsTrigger>
+              <TabsTrigger value="recovery" className="rounded-lg data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400 transition-all">
+                Recovery
               </TabsTrigger>
               <TabsTrigger value="admin" className="rounded-lg data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive transition-all">
-                Admin Access
+                Admin
               </TabsTrigger>
             </TabsList>
 
@@ -117,6 +141,29 @@ export function AccessPortal({
                 </div>
                 <Button type="submit" disabled={userLoading || !inviteToken} className="w-full h-11 rounded-xl mt-2 font-semibold shadow-[0_0_20px_-5px] shadow-primary/40 hover:shadow-primary/60 transition-all">
                   {userLoading ? "Joining Anonymously..." : "Enter Room"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="recovery" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
+              <form onSubmit={handleRecoveryLogin} className="flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">Recovery Phrase</label>
+                    <div className="relative">
+                      <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="password"
+                        value={recoveryPhrase}
+                        onChange={(e) => setRecoveryPhrase(e.target.value)}
+                        placeholder="Paste your recovery phrase..."
+                        className="bg-black/40 border-white/10 pl-9 h-11 rounded-xl focus-visible:ring-blue-500/50 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Button type="submit" disabled={recoveryLoading || !recoveryPhrase} className="w-full h-11 rounded-xl mt-2 font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_-5px] shadow-blue-500/40 hover:shadow-blue-500/60 transition-all">
+                  {recoveryLoading ? "Recovering..." : "Recover Session"}
                 </Button>
               </form>
             </TabsContent>

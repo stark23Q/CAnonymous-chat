@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 type CurrentUser = {
   anonymousName: string;
   avatarSeed: string;
+  recoveryPhrase?: string;
 };
 
 type IdentityPanelProps = {
@@ -16,10 +17,11 @@ type IdentityPanelProps = {
   onRotate: () => void | Promise<void>;
   onUpdateName: (newName: string) => Promise<void>;
   onClose: () => void;
+  onLogout: () => void;
   isLoading?: boolean;
 };
 
-export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, isLoading = false }: IdentityPanelProps) {
+export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, onLogout, isLoading = false }: IdentityPanelProps) {
   const [confirming, setConfirming] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(currentUser.anonymousName);
@@ -82,6 +84,16 @@ export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, is
             <p className="mt-0.5 text-xs text-muted-foreground">Your current anonymous alias</p>
           </div>
         )}
+
+        {currentUser.recoveryPhrase && (
+          <div className="mt-2 flex w-full flex-col gap-1 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Recovery Phrase</span>
+            <div className="flex items-center gap-2">
+              <code className="text-xs font-mono text-blue-200 truncate select-all">{currentUser.recoveryPhrase}</code>
+            </div>
+            <p className="text-[10px] text-blue-300 mt-1">Copy and save this to log back in later.</p>
+          </div>
+        )}
       </div>
 
       {/* Action area */}
@@ -134,6 +146,17 @@ export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, is
             </div>
           </div>
         )}
+        
+        <div className="mt-3 border-t border-white/5 pt-3">
+          <Button
+            type="button"
+            variant="destructive"
+            className="w-full bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-red-500/20"
+            onClick={onLogout}
+          >
+            Logout
+          </Button>
+        </div>
       </div>
     </div>
   );

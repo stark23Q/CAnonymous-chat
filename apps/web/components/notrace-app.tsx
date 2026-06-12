@@ -726,6 +726,13 @@ export function NoTraceApp() {
     }
   };
 
+  const handleLogout = () => {
+    window.localStorage.removeItem("notrace_access");
+    setAccessToken(null);
+    setUser(null);
+    window.location.reload();
+  };
+
   const updateGroupName = async (newName: string, targetGroupId?: string) => {
     const idToUpdate = targetGroupId || selectedCommunityId;
     if (!accessToken || !user || !idToUpdate) return;
@@ -1078,10 +1085,11 @@ export function NoTraceApp() {
               {/* Ephemeral floating panels */}
               {showIdentity && user && (
                 <IdentityPanel
-                  currentUser={{ anonymousName: user.anonymousName, avatarSeed: user.avatarSeed }}
+                  currentUser={{ anonymousName: user.anonymousName, avatarSeed: user.avatarSeed, recoveryPhrase: user.recoveryPhrase }}
                   onRotate={rotateIdentity}
                   onUpdateName={updateIdentityName}
                   onClose={() => setShowIdentity(false)}
+                  onLogout={handleLogout}
                   isLoading={identityLoading}
                 />
               )}

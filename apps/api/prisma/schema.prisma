@@ -73,6 +73,7 @@ model User {
   avatarSeed    String
   role          UserRole  @default(MEMBER)
   publicKey     String?
+  recoveryKeyHash String?
   createdAt     DateTime  @default(now())
   lastActiveAt  DateTime?
 

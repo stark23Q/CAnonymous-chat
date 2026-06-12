@@ -35,6 +35,10 @@ const refreshSchema = z.object({
   refreshToken: z.string().optional()
 });
 
+const recoveryLoginSchema = z.object({
+  recoveryPhrase: z.string().min(10)
+});
+
 export function authRoutes(): Router {
   const router = express.Router();
 
@@ -214,11 +218,14 @@ export function authRoutes(): Router {
         }
       }
 
+      const recoveryPhrase = createOpaqueToken("rcv");
+
       const user = await prisma.$transaction(async (tx) => {
         const createdUser = await tx.user.create({
           data: {
             anonymousName: finalUserName,
             avatarSeed: userIdentity.avatarSeed,
+            recoveryKeyHash: hashToken(recoveryPhrase),
             memberships: {
               create: {
                 groupId,
@@ -247,6 +254,37 @@ export function authRoutes(): Router {
 
         return createdUser;
       });
+
+      const tokens = await createSession(user);
+      setAuthCookies(res, tokens);
+
+      res.status(201).json({
+        user: {
+          id: user.id,
+          anonymousName: user.anonymousName,
+          avatarSeed: user.avatarSeed,
+          role: user.role,
+          recoveryPhrase
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/recovery-login", requireCsrf, async (req, res, next) => {
+    try {
+      const { recoveryPhrase } = recoveryLoginSchema.parse(req.body);
+      const user = await prisma.user.findFirst({
+        where: { recoveryKeyHash: hashToken(recoveryPhrase) }
+      });
+
+      if (!user) {
+        res.status(401).json({ error: "Invalid recovery phrase." });
+        return;
+      }
 
       const tokens = await createSession(user);
       setAuthCookies(res, tokens);
