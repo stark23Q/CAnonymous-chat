@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, BellOff, CircleDot, Ghost, Hash, Menu, MessageSquare, Plus, RefreshCw, Search, Settings, Shield, UserPlus, VenetianMask, Vote } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, Bell, BellOff, CircleDot, Ghost, Hash, Menu, MessageSquare, Plus, RefreshCw, Search, Settings, Shield, Sparkles, UserPlus, VenetianMask, Vote } from "lucide-react";
 import { ChannelList } from "@/components/chat/channel-list";
 import { Composer } from "@/components/chat/composer";
 import { ConfessionComposer } from "@/components/chat/confession-composer";
@@ -11,6 +11,7 @@ import { IdentityPanel } from "@/components/chat/identity-panel";
 import { MessageList } from "@/components/chat/message-list";
 import { PollsPanel } from "@/components/chat/polls-panel";
 import { QAPanel } from "@/components/chat/qa-panel";
+import { VoiceChannel } from "@/components/chat/voice-channel";
 import { AdminPanel } from "@/components/dashboard/admin-panel";
 import type { AdminReport } from "@/components/dashboard/admin-panel";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +21,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch } from "@/lib/api";
 import { communities as seedCommunities, initialMessages, joinRequests as seedRequests, members as seedMembers } from "@/lib/sample-data";
@@ -111,6 +114,79 @@ function toMember(member: ApiMember): Member {
   };
 }
 
+async function deriveKey(passphrase: string, saltString: string): Promise<CryptoKey> {
+  if (typeof window === "undefined") throw new Error("Window is not defined");
+  const encoder = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  const salt = encoder.encode(saltString);
+  return window.crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptText(text: string, key: CryptoKey): Promise<string> {
+  if (typeof window === "undefined") throw new Error("Window is not defined");
+  const encoder = new TextEncoder();
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv: iv
+    },
+    key,
+    encoder.encode(text)
+  );
+  const combined = new Uint8Array(iv.length + encrypted.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(encrypted), iv.length);
+  let binary = "";
+  const len = combined.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(combined[i]);
+  }
+  return window.btoa(binary);
+}
+
+async function decryptText(encryptedBase64: string, key: CryptoKey): Promise<string> {
+  if (typeof window === "undefined") throw new Error("Window is not defined");
+  try {
+    const binary = window.atob(encryptedBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const iv = bytes.slice(0, 12);
+    const ciphertext = bytes.slice(12);
+    const decrypted = await window.crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      key,
+      ciphertext
+    );
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
+  } catch (err) {
+    return "[Decryption Failed: Invalid Passphrase]";
+  }
+}
+
 export function NoTraceApp() {
   const router = useRouter();
   const [accessToken, setAccessToken] = useState<string | null>(() =>
@@ -132,6 +208,7 @@ export function NoTraceApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [muted, setMuted] = useState(false);
   const [notice, setNotice] = useState("Connecting to NoTrace API...");
+  const [welcomePhrase, setWelcomePhrase] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [liveReady, setLiveReady] = useState(false);
 
@@ -147,6 +224,65 @@ export function NoTraceApp() {
   const [showIdentity, setShowIdentity] = useState(false);
   const [identityLoading, setIdentityLoading] = useState(false);
 
+  // E2EE & Read Receipts States
+  const [groupPassphrases, setGroupPassphrases] = useState<Record<string, string>>({});
+  const [groupKeys, setGroupKeys] = useState<Record<string, CryptoKey>>({});
+  const [decryptedContents, setDecryptedContents] = useState<Record<string, string>>({});
+  const [readReceipts, setReadReceipts] = useState<Record<string, string>>({});
+
+  // Settings & Theme states
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "dark";
+    return window.localStorage.getItem("notrace_theme") || "dark";
+  });
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const stored = window.localStorage.getItem("notrace_sound");
+    return stored === null ? true : stored === "true";
+  });
+
+  // Refs for socket events to avoid dependency thrashing
+  const soundEnabledRef = useRef(soundEnabled);
+  const mutedRef = useRef(muted);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // Audio beep notification helper
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabledRef.current || mutedRef.current) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+      
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {
+      // Audio context block
+    }
+  }, []);
+
   // Rename Dialogs
   const [channelDialog, setChannelDialog] = useState<{ open: boolean; mode: "CREATE" | "RENAME"; channelId?: string; name: string }>({ open: false, mode: "CREATE", name: "" });
   const [groupRenameDialog, setGroupRenameDialog] = useState<{ open: boolean; groupId: string; name: string }>({ open: false, groupId: "", name: "" });
@@ -161,6 +297,7 @@ export function NoTraceApp() {
 
   const channelMessages = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const isE2EE = selectedCommunity?.e2eeMode;
     return messages.filter((message) => {
       if (message.channelId !== selectedChannel?.id) {
         return false;
@@ -170,9 +307,18 @@ export function NoTraceApp() {
         return true;
       }
 
-      return `${message.author.anonymousName} ${message.content ?? ""}`.toLowerCase().includes(query);
+      const content = isE2EE ? (decryptedContents[message.id] ?? "") : (message.content ?? "");
+      return `${message.author.anonymousName} ${content}`.toLowerCase().includes(query);
+    }).map((message) => {
+      if (isE2EE) {
+        return {
+          ...message,
+          content: decryptedContents[message.id] ?? (message.content ? "[Decrypting message...]" : null)
+        };
+      }
+      return message;
     });
-  }, [messages, searchQuery, selectedChannel?.id]);
+  }, [messages, searchQuery, selectedChannel?.id, selectedCommunity?.e2eeMode, decryptedContents]);
 
   const loadGroups = useCallback(async () => {
     const data = await apiFetch<{ groups: ApiGroup[] }>("/api/groups");
@@ -343,8 +489,21 @@ export function NoTraceApp() {
           return current.map((item) => (item.id === message.id ? message : item));
         }
 
+        if (message.author.anonymousName !== userRef.current?.anonymousName) {
+          playNotificationSound();
+        }
+
         return [...current, message];
       });
+    };
+
+    const onMessageReceipt = (payload: { channelId: string; membershipId: string; anonymousName: string; readAt: string }) => {
+      if (payload.channelId === selectedChannel.id) {
+        setReadReceipts((current) => ({
+          ...current,
+          [payload.anonymousName]: payload.readAt
+        }));
+      }
     };
 
     const onTyping = (payload: { channelId: string; anonymousName: string; isTyping: boolean }) => {
@@ -353,18 +512,101 @@ export function NoTraceApp() {
       }
     };
 
+    const onNewRequest = ({ request }: { request: JoinRequest }) => {
+      if (request.groupId === selectedCommunity.id) {
+        setRequests((current) => {
+          const exists = current.some((item) => item.id === request.id);
+          if (exists) return current;
+          return [request, ...current];
+        });
+        setNotice("New join request received!");
+      }
+    };
+
+    const onUpdatedRequest = ({ requestId, status }: { requestId: string; status: JoinRequest["status"] }) => {
+      setRequests((current) =>
+        current.map((item) => (item.id === requestId ? { ...item, status } : item))
+      );
+    };
+
     socket.on("message:new", upsertMessage);
     socket.on("message:deleted", upsertMessage);
     socket.on("reaction:updated", upsertMessage);
     socket.on("typing:update", onTyping);
+    socket.on("request:new", onNewRequest);
+    socket.on("request:updated", onUpdatedRequest);
+    socket.on("message:receipt", onMessageReceipt);
 
     return () => {
       socket.off("message:new", upsertMessage);
       socket.off("message:deleted", upsertMessage);
       socket.off("reaction:updated", upsertMessage);
       socket.off("typing:update", onTyping);
+      socket.off("request:new", onNewRequest);
+      socket.off("request:updated", onUpdatedRequest);
+      socket.off("message:receipt", onMessageReceipt);
     };
   }, [liveReady, socket, connected, selectedCommunity?.id, selectedCommunityId, selectedChannel?.id, selectedChannelId]);
+
+  const sendReadReceipt = useCallback(() => {
+    if (socket && connected && selectedCommunity?.readReceiptsEnabled && selectedChannel?.id) {
+      socket.emit("message:read", { groupId: selectedCommunity.id, channelId: selectedChannel.id });
+      apiFetch(`/api/groups/${selectedCommunity.id}/membership/read`, { method: "POST" }).catch(() => {});
+    }
+  }, [socket, connected, selectedCommunity, selectedChannel]);
+
+  useEffect(() => {
+    if (selectedChannel?.id && messages.length > 0) {
+      sendReadReceipt();
+    }
+  }, [selectedChannel?.id, messages.length, sendReadReceipt]);
+
+  useEffect(() => {
+    setReadReceipts({});
+  }, [selectedChannelId]);
+
+  // E2EE Decryption Effect
+  useEffect(() => {
+    if (!selectedCommunity?.e2eeMode) {
+      return;
+    }
+    const key = groupKeys[selectedCommunity.id];
+    if (!key) {
+      return;
+    }
+
+    let active = true;
+
+    async function decryptAll() {
+      const newDecrypted: Record<string, string> = {};
+      let changed = false;
+      for (const msg of messages) {
+        if (msg.channelId === selectedChannelId && msg.content && !decryptedContents[msg.id]) {
+          try {
+            const dec = await decryptText(msg.content, key);
+            newDecrypted[msg.id] = dec;
+            changed = true;
+          } catch (err) {
+            newDecrypted[msg.id] = "[Decryption Failed]";
+            changed = true;
+          }
+        }
+      }
+
+      if (changed && active) {
+        setDecryptedContents((current) => ({
+          ...current,
+          ...newDecrypted
+        }));
+      }
+    }
+
+    void decryptAll();
+
+    return () => {
+      active = false;
+    };
+  }, [messages, groupKeys, selectedCommunityId, selectedCommunity?.e2eeMode, selectedChannelId]);
 
   if (!selectedCommunity || !selectedChannel) {
     return (
@@ -488,11 +730,26 @@ export function NoTraceApp() {
     }
   };
 
-  const sendMessage = (content: string, kind: "TEXT" | "MEME" | "FILE" = "TEXT", expiresInSeconds?: number | null, fileMeta?: { size: number; mime: string; name: string }) => {
+  const sendMessage = async (content: string, kind: "TEXT" | "MEME" | "FILE" = "TEXT", expiresInSeconds?: number | null, fileMeta?: { size: number; mime: string; name: string }) => {
+    let finalContent = content;
+    if (selectedCommunity.e2eeMode && kind === "TEXT") {
+      const key = groupKeys[selectedCommunity.id];
+      if (!key) {
+        setNotice("Cannot encrypt message. Key not derived.");
+        return;
+      }
+      try {
+        finalContent = await encryptText(content, key);
+      } catch (err) {
+        setNotice("Failed to encrypt message.");
+        return;
+      }
+    }
+
     const payload = {
       groupId: selectedCommunity.id,
       channelId: selectedChannel.id,
-      content: kind === "MEME" ? "Shared an image" : content,
+      content: kind === "MEME" ? "Shared an image" : finalContent,
       messageType: kind,
       mediaUrl:
         kind === "MEME"
@@ -508,9 +765,14 @@ export function NoTraceApp() {
     setReplyTo(null);
 
     if (socket && connected) {
-      socket.emit("message:send", payload, (response: { ok: boolean; error?: string }) => {
+      socket.emit("message:send", payload, (response: any) => {
         if (!response.ok) {
           setNotice(response.error ?? "Message failed.");
+        } else if (selectedCommunity.e2eeMode && response.data?.message?.id) {
+          setDecryptedContents((current) => ({
+            ...current,
+            [response.data.message.id]: content
+          }));
         }
       });
       return;
@@ -520,7 +782,15 @@ export function NoTraceApp() {
       method: "POST",
       body: JSON.stringify(payload)
     })
-      .then((data) => setMessages((current) => [...current, data.message]))
+      .then((data) => {
+        setMessages((current) => [...current, data.message]);
+        if (selectedCommunity.e2eeMode) {
+          setDecryptedContents((current) => ({
+            ...current,
+            [data.message.id]: content
+          }));
+        }
+      })
       .catch((error) => setNotice(error instanceof Error ? error.message : "Message failed."));
   };
 
@@ -822,13 +1092,21 @@ export function NoTraceApp() {
 
   return (
     <TooltipProvider>
-      <div className="noise" />
+      <div className={cn("h-full min-h-screen text-foreground bg-background transition-colors duration-300", {
+        "theme-cyberpunk": theme === "cyberpunk",
+        "theme-emerald": theme === "emerald",
+        "theme-light": theme === "light"
+      })}>
+        <div className="noise" />
       {(!accessToken || !user) ? (
         <AccessPortal
           onAuthenticated={(token, usr) => {
             window.localStorage.setItem("notrace_access", token);
             setAccessToken(token);
             setUser(usr);
+            if (usr.recoveryPhrase) {
+              setWelcomePhrase(usr.recoveryPhrase);
+            }
           }}
         />
       ) : (
@@ -877,7 +1155,7 @@ export function NoTraceApp() {
               <Plus className="h-4 w-4" aria-hidden />
             </Button>
           </div>
-          <Button type="button" variant="ghost" size="icon" onClick={() => setNotice("Use the Admin settings panel on the right.")}>
+          <Button type="button" variant="ghost" size="icon" onClick={() => setSettingsOpen(true)}>
             <Settings className="h-4 w-4" aria-hidden />
           </Button>
         </nav>
@@ -1041,7 +1319,56 @@ export function NoTraceApp() {
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden relative">
               {/* Main Content Area */}
-              {showConfessions ? (
+              {selectedCommunity.e2eeMode && !groupKeys[selectedCommunity.id] ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-black/40 backdrop-blur-md">
+                  <div className="max-w-md w-full border border-violet-500/20 bg-black/60 rounded-2xl p-6 shadow-2xl text-center space-y-6">
+                    <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-violet-500/40 bg-violet-500/10 text-violet-400 animate-pulse">
+                      <Shield className="h-8 w-8" />
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-bold tracking-tight text-white">End-to-End Encrypted Room</h2>
+                      <p className="text-sm text-muted-foreground">
+                        This group is secured with client-side zero-knowledge E2EE. Enter the group passphrase to derive the decryption key.
+                      </p>
+                    </div>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.currentTarget;
+                        const input = form.elements.namedItem("passphrase") as HTMLInputElement;
+                        const val = input.value.trim();
+                        if (val) {
+                          setNotice("Deriving key...");
+                          try {
+                            const derived = await deriveKey(val, selectedCommunity.id);
+                            setGroupPassphrases((prev) => ({ ...prev, [selectedCommunity.id]: val }));
+                            setGroupKeys((prev) => ({ ...prev, [selectedCommunity.id]: derived }));
+                            setNotice("Decryption key active.");
+                          } catch (err) {
+                            setNotice("Failed to derive encryption key.");
+                          }
+                        }
+                      }}
+                      className="space-y-4"
+                    >
+                      <Input
+                        name="passphrase"
+                        type="password"
+                        placeholder="Enter group passphrase"
+                        className="bg-card border-border text-center font-mono placeholder:font-sans"
+                        required
+                        autoFocus
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full bg-violet-600 text-white hover:bg-violet-500 font-semibold shadow-[0_0_20px_-5px] shadow-violet-500/40"
+                      >
+                        Unlock Messages
+                      </Button>
+                    </form>
+                  </div>
+                </div>
+              ) : showConfessions ? (
                 <div className="flex-1 overflow-hidden bg-background/50">
                   <ConfessionsPanel
                     groupId={selectedCommunity.id}
@@ -1071,6 +1398,15 @@ export function NoTraceApp() {
                     onClose={() => setShowQA(false)}
                   />
                 </div>
+              ) : selectedChannel.kind === "VOICE_FUTURE" ? (
+                <div className="flex-1 overflow-hidden bg-background/50">
+                  <VoiceChannel
+                    groupId={selectedCommunity.id}
+                    channelId={selectedChannel.id}
+                    socket={socket}
+                    currentUser={user}
+                  />
+                </div>
               ) : (
                 <MessageList
                   messages={channelMessages}
@@ -1079,6 +1415,9 @@ export function NoTraceApp() {
                   onReport={reportMessage}
                   onReply={setReplyTo}
                   onAvatarClick={(author) => void startDirectMessage(author.id)}
+                  readReceiptsEnabled={selectedCommunity.readReceiptsEnabled}
+                  readReceipts={readReceipts}
+                  currentUser={user}
                 />
               )}
 
@@ -1095,20 +1434,22 @@ export function NoTraceApp() {
               )}
 
               {/* Composer */}
-              <div className="shrink-0 pb-4">
-                <Composer
-                  channelName={selectedChannel.name}
-                  replyTo={replyTo}
-                  onCancelReply={() => setReplyTo(null)}
-                  onTyping={(isTyping) => {
-                    if (!socket || !selectedCommunity?.typingEnabled) return;
-                    socket.emit(isTyping ? "typing:start" : "typing:stop", { groupId: selectedCommunity.id, channelId: selectedChannel.id });
-                  }}
-                  onSend={sendMessage}
-                  onConfess={postConfession}
-                  forceConfessionMode={showConfessions}
-                />
-              </div>
+              {selectedChannel.kind !== "VOICE_FUTURE" && (
+                <div className="shrink-0 pb-4">
+                  <Composer
+                    channelName={selectedChannel.name}
+                    replyTo={replyTo}
+                    onCancelReply={() => setReplyTo(null)}
+                    onTyping={(isTyping) => {
+                      if (!socket || !selectedCommunity?.typingEnabled) return;
+                      socket.emit(isTyping ? "typing:start" : "typing:stop", { groupId: selectedCommunity.id, channelId: selectedChannel.id });
+                    }}
+                    onSend={sendMessage}
+                    onConfess={postConfession}
+                    forceConfessionMode={showConfessions}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -1160,7 +1501,7 @@ export function NoTraceApp() {
 
       {/* Channel Dialog */}
       <Dialog open={channelDialog.open} onOpenChange={(open) => setChannelDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
+        <DialogContent className="sm:max-w-md bg-card/90 border-border backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>{channelDialog.mode === "CREATE" ? "Create New Channel" : "Rename Channel"}</DialogTitle>
           </DialogHeader>
@@ -1169,7 +1510,7 @@ export function NoTraceApp() {
               placeholder="e.g., general, memes, study"
               value={channelDialog.name}
               onChange={(e) => setChannelDialog(prev => ({ ...prev, name: e.target.value }))}
-              className="bg-black/50 border-white/10"
+              className="bg-card border-border"
               maxLength={40}
               autoFocus
             />
@@ -1185,7 +1526,7 @@ export function NoTraceApp() {
 
       {/* Group Rename Dialog */}
       <Dialog open={groupRenameDialog.open} onOpenChange={(open) => setGroupRenameDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
+        <DialogContent className="sm:max-w-md bg-card/90 border-border backdrop-blur-xl">
           <DialogHeader>
             <DialogTitle>Rename Group</DialogTitle>
           </DialogHeader>
@@ -1201,7 +1542,7 @@ export function NoTraceApp() {
               placeholder="Enter new group name"
               value={groupRenameDialog.name}
               onChange={(e) => setGroupRenameDialog(prev => ({ ...prev, name: e.target.value }))}
-              className="bg-black/50 border-white/10"
+              className="bg-card border-border"
               maxLength={80}
               autoFocus
             />
@@ -1213,6 +1554,50 @@ export function NoTraceApp() {
         </DialogContent>
       </Dialog>
       
+      {welcomePhrase && (
+        <Dialog open={true} onOpenChange={() => setWelcomePhrase(null)}>
+          <DialogContent className="sm:max-w-md bg-card/95 border-border backdrop-blur-xl text-foreground">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl font-bold bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent">
+                <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+                Welcome to NoTrace!
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-sm">
+                NoTrace is completely anonymous. We do not collect emails, phone numbers, or passwords.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-4 space-y-2 text-center">
+                <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest">Your Private Recovery Phrase</p>
+                <div className="flex items-center justify-center gap-2 bg-card border border-border rounded-lg py-3 px-4">
+                  <code className="text-base font-mono text-white tracking-wider select-all">{welcomePhrase}</code>
+                </div>
+                <p className="text-[10px] text-violet-300">
+                  Save this key! You need it to log back in if you clear your browser or logout.
+                </p>
+              </div>
+              <div className="flex gap-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-xs text-yellow-300 items-start">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-yellow-400 mt-0.5" />
+                <span>If you lose this phrase, your account and all group access are **permanently lost**. There is no "Forgot Password" option.</span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-semibold shadow-[0_0_20px_-5px] shadow-primary/40"
+                onClick={() => {
+                  navigator.clipboard.writeText(welcomePhrase).catch(() => {});
+                  setWelcomePhrase(null);
+                  setNotice("Recovery phrase copied to clipboard!");
+                }}
+              >
+                Copy & Enter Chat
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      
       {/* Group Context Menu */}
       {contextMenu.open && (
         <>
@@ -1222,7 +1607,7 @@ export function NoTraceApp() {
             onContextMenu={(e) => { e.preventDefault(); setContextMenu({ open: false, x: 0, y: 0 }); }}
           />
           <div 
-            className="fixed z-50 w-48 bg-black/90 border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 backdrop-blur-xl"
+            className="fixed z-50 w-48 bg-card border border-border rounded-xl shadow-2xl overflow-hidden py-1 backdrop-blur-xl"
             style={{ top: contextMenu.y, left: contextMenu.x }}
           >
             <button 
@@ -1261,6 +1646,104 @@ export function NoTraceApp() {
           </div>
         </>
       )}
+
+      {/* Settings Dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-md bg-card/90 border-border backdrop-blur-xl text-foreground">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              App Settings
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Customize your personal NoTrace workspace options.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Theme Selector */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-foreground">Theme Mode</Label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: "dark", label: "Dark" },
+                  { id: "cyberpunk", label: "Cyberpunk" },
+                  { id: "emerald", label: "Emerald" },
+                  { id: "light", label: "Light" }
+                ].map((t) => (
+                  <Button
+                    key={t.id}
+                    type="button"
+                    variant={theme === t.id ? "secondary" : "outline"}
+                    className={cn(
+                      "h-10 text-xs font-semibold uppercase tracking-wider",
+                      theme === t.id && "border-primary/50 text-primary shadow-[0_0_12px_-3px] shadow-primary/40"
+                    )}
+                    onClick={() => {
+                      setTheme(t.id);
+                      window.localStorage.setItem("notrace_theme", t.id);
+                    }}
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sound Toggle */}
+            <div className="flex items-center justify-between border-t border-white/5 pt-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold text-foreground">Message Sound Alerts</Label>
+                <p className="text-xs text-muted-foreground">Play alert sounds on incoming messages</p>
+              </div>
+              <Button
+                type="button"
+                variant={soundEnabled ? "secondary" : "outline"}
+                className={cn(
+                  "h-9 px-4 font-semibold text-xs uppercase tracking-wider",
+                  soundEnabled && "border-primary/50 text-primary shadow-[0_0_12px_-3px] shadow-primary/40"
+                )}
+                onClick={() => {
+                  const next = !soundEnabled;
+                  setSoundEnabled(next);
+                  window.localStorage.setItem("notrace_sound", String(next));
+                }}
+              >
+                {soundEnabled ? "On" : "Muted"}
+              </Button>
+            </div>
+
+            {/* Reset Session Cache */}
+            <div className="flex items-center justify-between border-t border-white/5 pt-4">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-semibold text-destructive">Danger Zone</Label>
+                <p className="text-xs text-muted-foreground">Reset session, keys, and log out</p>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                className="h-9 px-4 font-semibold text-xs uppercase tracking-wider"
+                onClick={() => {
+                  if (window.confirm("WARNING: This will completely delete your local session credentials, encryption keys, and recovery phrase cache. You will not be able to log back in without your recovery phrase. Continue?")) {
+                    handleLogout();
+                  }
+                }}
+              >
+                Reset Session
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-semibold"
+              onClick={() => setSettingsOpen(false)}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </div>
     </TooltipProvider>
   );
 }

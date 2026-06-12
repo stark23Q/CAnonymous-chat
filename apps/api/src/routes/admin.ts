@@ -12,6 +12,7 @@ import { requireCsrf } from "../middleware/csrf.js";
 import { createUniqueMembershipIdentity } from "../services/identity.js";
 import { audit } from "../utils/audit.js";
 import { sanitizeOptionalText, sanitizeText } from "../utils/sanitize.js";
+import { getSocketServer } from "../realtime.js";
 
 const groupSchema = z.object({
   name: z.string().min(2).max(80),
@@ -377,6 +378,11 @@ export function adminRoutes(): Router {
         targetId: request.id
       });
 
+      getSocketServer().to(`group:${request.groupId}`).emit("request:updated", {
+        requestId: request.id,
+        status: JoinRequestStatus.APPROVED
+      });
+
       res.json({
         requestId: request.id,
         expiresAt
@@ -402,9 +408,14 @@ export function adminRoutes(): Router {
 
       await audit({
         actorId: req.auth!.userId,
-        groupId: request.groupId,
+        groupId: existing.groupId,
         action: "join_request.rejected",
         targetId: request.id
+      });
+
+      getSocketServer().to(`group:${existing.groupId}`).emit("request:updated", {
+        requestId: existing.id,
+        status: JoinRequestStatus.REJECTED
       });
 
       res.json({ request });

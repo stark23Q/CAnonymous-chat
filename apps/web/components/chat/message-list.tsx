@@ -57,7 +57,10 @@ export function MessageList({
   onDelete,
   onReport,
   onReply,
-  onAvatarClick
+  onAvatarClick,
+  readReceiptsEnabled,
+  readReceipts,
+  currentUser
 }: {
   messages: ChatMessage[];
   onReact: (messageId: string, emoji: string) => void;
@@ -65,6 +68,9 @@ export function MessageList({
   onReport: (messageId: string, reason: string) => void;
   onReply: (message: ChatMessage) => void;
   onAvatarClick?: (author: { id: string; anonymousName: string; avatarSeed: string }) => void;
+  readReceiptsEnabled?: boolean;
+  readReceipts?: Record<string, string>;
+  currentUser?: { anonymousName: string } | null;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
@@ -113,6 +119,19 @@ export function MessageList({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-bold text-foreground">{message.author.anonymousName}</span>
                     <span className="text-xs text-muted-foreground">{formatTime(message.createdAt)}</span>
+
+                    {/* Read Receipts Checkmarks */}
+                    {readReceiptsEnabled && currentUser && currentUser.anonymousName === message.author.anonymousName && (
+                      <span className="inline-flex items-center gap-0.5 ml-1">
+                        {Object.entries(readReceipts || {}).some(([name, readAt]) => {
+                          return name !== currentUser.anonymousName && new Date(readAt).getTime() >= new Date(message.createdAt).getTime();
+                        }) ? (
+                          <span className="text-emerald-400 font-bold text-xs select-none" title="Seen by others">✓✓</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs select-none" title="Sent">✓</span>
+                        )}
+                      </span>
+                    )}
 
                     {/* Self-destruct badge */}
                     {isSelfDestruct && !message.deletedAt ? (

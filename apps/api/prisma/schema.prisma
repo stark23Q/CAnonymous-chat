@@ -147,6 +147,7 @@ model Membership {
   avatarSeed    String
   status        MembershipStatus @default(PENDING)
   joinedAt      DateTime?
+  lastReadAt    DateTime?
   bannedAt      DateTime?
   removedAt     DateTime?
   createdAt     DateTime         @default(now())

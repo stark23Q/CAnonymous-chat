@@ -509,5 +509,34 @@ export function groupRoutes(): Router {
     }
   });
 
+  router.post("/:groupId/membership/read", requireCsrf, async (req, res, next) => {
+    try {
+      const auth = req.auth!;
+      await assertApprovedMembership(auth.userId, req.params.groupId);
+
+      const now = new Date();
+      await prisma.membership.update({
+        where: {
+          userId_groupId: {
+            userId: auth.userId,
+            groupId: req.params.groupId
+          }
+        },
+        data: {
+          lastReadAt: now
+        }
+      });
+
+      getSocketServer().to(`group:${req.params.groupId}`).emit("membership:read", {
+        userId: auth.userId,
+        lastReadAt: now.toISOString()
+      });
+
+      res.status(200).json({ success: true, lastReadAt: now });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }

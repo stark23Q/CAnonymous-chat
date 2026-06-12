@@ -164,3 +164,115 @@ button {
   background: rgba(148, 163, 184, 0.28);
   border-radius: 999px;
 }
+
+/* Theme overrides */
+.theme-cyberpunk {
+  --background: 280 40% 4%;
+  --foreground: 180 100% 90%;
+  --card: 280 45% 6%;
+  --card-foreground: 180 100% 90%;
+  --primary: 320 100% 60%; /* Neon Pink */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 180 100% 50%; /* Neon Cyan */
+  --secondary-foreground: 280 40% 4%;
+  --muted: 280 30% 12%;
+  --muted-foreground: 180 40% 70%;
+  --accent: 60 100% 50%; /* Neon Yellow */
+  --accent-foreground: 280 40% 4%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 280 35% 15%;
+  --input: 280 35% 15%;
+  --ring: 320 100% 60%;
+}
+
+.theme-cyberpunk .glass-panel {
+  background: rgba(29, 20, 41, 0.55);
+  border: 1px solid rgba(244, 63, 194, 0.15);
+  box-shadow: inset 0 0 20px rgba(244, 63, 194, 0.05);
+}
+
+.theme-cyberpunk .sent-bubble {
+  background: linear-gradient(135deg, rgba(244, 63, 194, 0.4) 0%, rgba(6, 182, 212, 0.4) 100%);
+  border: 1px solid rgba(244, 63, 194, 0.5);
+  box-shadow: 0 4px 20px rgba(244, 63, 194, 0.25);
+}
+
+.theme-emerald {
+  --background: 160 30% 4%;
+  --foreground: 120 100% 90%;
+  --card: 160 35% 6%;
+  --card-foreground: 120 100% 90%;
+  --primary: 150 90% 45%; /* Emerald green */
+  --primary-foreground: 160 30% 4%;
+  --secondary: 120 90% 45%; /* Lime / Matrix */
+  --secondary-foreground: 160 30% 4%;
+  --muted: 160 20% 12%;
+  --muted-foreground: 160 30% 70%;
+  --accent: 140 100% 50%;
+  --accent-foreground: 160 30% 4%;
+  --destructive: 350 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 160 25% 15%;
+  --input: 160 25% 15%;
+  --ring: 150 90% 45%;
+}
+
+.theme-emerald .glass-panel {
+  background: rgba(10, 26, 18, 0.55);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.05);
+}
+
+.theme-emerald .sent-bubble {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(34, 197, 94, 0.4) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+}
+
+.theme-light {
+  --background: 240 15% 98%;
+  --foreground: 240 10% 4%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 4%;
+  --primary: 265 85% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 90% 45%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 5% 90%;
+  --muted-foreground: 240 5% 40%;
+  --accent: 310 80% 55%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 350 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 265 85% 60%;
+}
+
+.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.01);
+}
+
+.theme-light .glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 245, 245, 0.98) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.theme-light .received-bubble {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.theme-light .sent-bubble {
+  background: linear-gradient(135deg, rgba(139, 74, 255, 0.75) 0%, rgba(0, 159, 226, 0.75) 100%);
+  border: 1px solid rgba(139, 74, 255, 0.8);
+  box-shadow: 0 4px 20px rgba(139, 74, 255, 0.15);
+}
+
+.theme-light .noise {
+  opacity: 0.02;
+}

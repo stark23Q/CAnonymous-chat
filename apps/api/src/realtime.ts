@@ -53,6 +53,16 @@ const reactionSchema = messageActionSchema.extend({
   emoji: z.string().min(1).max(32)
 });
 
+const voiceJoinSchema = z.object({
+  groupId: z.string().min(1),
+  channelId: z.string().min(1)
+});
+
+const voiceSignalSchema = z.object({
+  targetSocketId: z.string().min(1),
+  signal: z.any()
+});
+
 function roomForGroup(groupId: string) {
   return `group:${groupId}`;
 }
@@ -326,6 +336,91 @@ export async function setupRealtime(server: HttpServer) {
       } catch {
         // Optional privacy-sensitive feature; ignore failed receipts.
       }
+    });
+
+    socket.on("voice:join", async (payload, ack?: Ack<{ peers: { socketId: string; userId: string; anonymousName: string; avatarSeed: string }[] }>) => {
+      try {
+        const input = voiceJoinSchema.parse(payload);
+        const membership = await assertApprovedMembership(auth.userId, input.groupId);
+        const voiceRoom = `voice:${input.channelId}`;
+
+        // Store user details in socket data
+        socket.data.voiceUser = {
+          anonymousName: membership.anonymousName,
+          avatarSeed: membership.avatarSeed
+        };
+
+        // Find existing peers in this room
+        const socketIdsInRoom = Array.from(io.sockets.adapter.rooms.get(voiceRoom) || []);
+        const activePeers: { socketId: string; userId: string; anonymousName: string; avatarSeed: string }[] = [];
+
+        for (const sid of socketIdsInRoom) {
+          const s = io.sockets.sockets.get(sid);
+          if (s && s.id !== socket.id) {
+            activePeers.push({
+              socketId: s.id,
+              userId: s.data.auth.userId,
+              anonymousName: s.data.voiceUser?.anonymousName || "Anonymous",
+              avatarSeed: s.data.voiceUser?.avatarSeed || ""
+            });
+          }
+        }
+
+        await socket.join(voiceRoom);
+
+        // Notify others
+        socket.to(voiceRoom).emit("voice:user-joined", {
+          socketId: socket.id,
+          userId: auth.userId,
+          anonymousName: membership.anonymousName,
+          avatarSeed: membership.avatarSeed
+        });
+
+        ack?.({ ok: true, data: { peers: activePeers } });
+      } catch (error) {
+        ackError(ack, error);
+      }
+    });
+
+    socket.on("voice:leave", async (payload, ack?: Ack<{ success: true }>) => {
+      try {
+        const input = voiceJoinSchema.parse(payload);
+        const voiceRoom = `voice:${input.channelId}`;
+
+        await socket.leave(voiceRoom);
+
+        socket.to(voiceRoom).emit("voice:user-left", {
+          socketId: socket.id,
+          userId: auth.userId
+        });
+
+        ack?.({ ok: true, data: { success: true } });
+      } catch (error) {
+        ackError(ack, error);
+      }
+    });
+
+    socket.on("voice:signal", (payload) => {
+      try {
+        const input = voiceSignalSchema.parse(payload);
+        io.to(input.targetSocketId).emit("voice:signal", {
+          senderSocketId: socket.id,
+          signal: input.signal
+        });
+      } catch {
+        // Silent catch for invalid signals
+      }
+    });
+
+    socket.on("disconnecting", () => {
+      socket.rooms.forEach((room) => {
+        if (room.startsWith("voice:")) {
+          socket.to(room).emit("voice:user-left", {
+            socketId: socket.id,
+            userId: auth.userId
+          });
+        }
+      });
     });
 
     socket.on("disconnect", () => {

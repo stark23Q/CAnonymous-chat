@@ -19,6 +19,7 @@ import {
 } from "../services/sessions.js";
 import { audit } from "../utils/audit.js";
 import { sanitizeOptionalText } from "../utils/sanitize.js";
+import { getSocketServer } from "../realtime.js";
 
 const joinRequestSchema = z.object({
   inviteCode: z.string().min(6).max(120),
@@ -140,6 +141,18 @@ export function authRoutes(): Router {
         });
 
         return created;
+      });
+
+      getSocketServer().to(`group:${invitation.groupId}`).emit("request:new", {
+        request: {
+          id: joinRequest.id,
+          groupId: invitation.groupId,
+          groupName: invitation.group.name,
+          requestedAlias: joinRequest.requestedAlias,
+          reason: joinRequest.reason,
+          createdAt: joinRequest.createdAt.toISOString(),
+          status: joinRequest.status
+        }
       });
 
       res.status(201).json({
