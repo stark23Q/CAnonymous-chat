@@ -1,12 +1,13 @@
 import type { Router } from "express";
 import express from "express";
-import { ChannelKind, JoinRequestStatus, MembershipStatus, RetentionPolicy, TokenPurpose } from "@prisma/client";
+import { ChannelKind, JoinRequestStatus, MembershipStatus, RetentionPolicy, TokenPurpose, UserRole } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { env } from "../config/env.js";
 import { createOpaqueToken, hashLookupValue, hashToken } from "../lib/crypto.js";
 import { prisma } from "../lib/prisma.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth.js";
+import { assertGroupAdmin } from "../services/access.js";
 import { requireCsrf } from "../middleware/csrf.js";
 import { createUniqueMembershipIdentity } from "../services/identity.js";
 import { audit } from "../utils/audit.js";
@@ -55,7 +56,7 @@ function slugify(name: string) {
 export function adminRoutes(): Router {
   const router = express.Router();
 
-  router.use(requireAdmin);
+  router.use(requireAuth);
 
   router.post("/groups", requireCsrf, async (req, res, next) => {
     try {
@@ -115,6 +116,7 @@ export function adminRoutes(): Router {
 
   router.patch("/groups/:groupId/settings", requireCsrf, async (req, res, next) => {
     try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
       const input = settingsSchema.parse(req.body);
       const group = await prisma.group.update({
         where: { id: req.params.groupId },
@@ -150,6 +152,7 @@ export function adminRoutes(): Router {
 
   router.delete("/groups/:groupId", requireCsrf, async (req, res, next) => {
     try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
       const group = await prisma.group.findUnique({
         where: { id: req.params.groupId }
       });
@@ -169,8 +172,61 @@ export function adminRoutes(): Router {
     }
   });
 
+  router.post("/groups/:groupId/channels", requireCsrf, async (req, res, next) => {
+    try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
+      const name = typeof req.body.name === "string" ? sanitizeText(req.body.name, 40) : null;
+      if (!name) {
+        res.status(400).json({ error: "Channel name is required." });
+        return;
+      }
+
+      const existingChannels = await prisma.channel.count({ where: { groupId: req.params.groupId } });
+      const channel = await prisma.channel.create({
+        data: {
+          groupId: req.params.groupId,
+          name,
+          position: existingChannels
+        }
+      });
+
+      await audit({
+        actorId: req.auth!.userId,
+        groupId: req.params.groupId,
+        action: "channel.created",
+        targetId: channel.id,
+        metadata: { name }
+      });
+
+      res.status(201).json({ channel });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.delete("/groups/:groupId/channels/:channelId", requireCsrf, async (req, res, next) => {
+    try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
+      
+      const channelCount = await prisma.channel.count({ where: { groupId: req.params.groupId } });
+      if (channelCount <= 1) {
+        res.status(400).json({ error: "Cannot delete the last channel in the group." });
+        return;
+      }
+
+      await prisma.channel.delete({
+        where: { id: req.params.channelId, groupId: req.params.groupId }
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/groups/:groupId/invitations", requireCsrf, async (req, res, next) => {
     try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
       const input = inviteSchema.parse(req.body);
       const code = createOpaqueToken("invite");
       const expiresAt = input.expiresInHours
@@ -208,11 +264,24 @@ export function adminRoutes(): Router {
 
   router.get("/join-requests", async (req, res, next) => {
     try {
-      const status = typeof req.query.status === "string" ? req.query.status : undefined;
-      const groupId = typeof req.query.groupId === "string" ? req.query.groupId : undefined;
+      let status = typeof req.query.status === "string" ? req.query.status : undefined;
+      let groupId = typeof req.query.groupId === "string" ? req.query.groupId : undefined;
+
+      let allowedGroupIds: string[] | undefined;
+      if (req.auth!.role !== UserRole.ADMIN) {
+        const ownedGroups = await prisma.group.findMany({ where: { createdById: req.auth!.userId }, select: { id: true } });
+        allowedGroupIds = ownedGroups.map(g => g.id);
+        if (groupId && !allowedGroupIds.includes(groupId)) {
+          return res.status(403).json({ error: "Forbidden" });
+        }
+        if (!groupId) {
+          if (allowedGroupIds.length === 0) return res.json({ requests: [] });
+        }
+      }
+
       const requests = await prisma.joinRequest.findMany({
         where: {
-          ...(groupId ? { groupId } : {}),
+          ...(groupId ? { groupId } : (allowedGroupIds ? { groupId: { in: allowedGroupIds } } : {})),
           ...(status ? { status: status as JoinRequestStatus } : {})
         },
         include: {
@@ -244,6 +313,8 @@ export function adminRoutes(): Router {
         res.status(404).json({ error: "Pending join request not found." });
         return;
       }
+      
+      await assertGroupAdmin(req.auth!.userId, request.groupId);
 
       if (!request.approvalTokenHash) {
         res.status(500).json({ error: "Join request is missing an approval token hash." });
@@ -289,6 +360,9 @@ export function adminRoutes(): Router {
 
   router.post("/join-requests/:requestId/reject", requireCsrf, async (req, res, next) => {
     try {
+      const existing = await prisma.joinRequest.findUniqueOrThrow({ where: { id: req.params.requestId } });
+      await assertGroupAdmin(req.auth!.userId, existing.groupId);
+
       const request = await prisma.joinRequest.update({
         where: { id: req.params.requestId },
         data: {
@@ -313,6 +387,7 @@ export function adminRoutes(): Router {
 
   router.get("/groups/:groupId/members", async (req, res, next) => {
     try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
       const members = await prisma.membership.findMany({
         where: { groupId: req.params.groupId },
         select: {
@@ -343,6 +418,9 @@ export function adminRoutes(): Router {
 
   router.post("/memberships/:membershipId/ban", requireCsrf, async (req, res, next) => {
     try {
+      const existing = await prisma.membership.findUniqueOrThrow({ where: { id: req.params.membershipId } });
+      await assertGroupAdmin(req.auth!.userId, existing.groupId);
+
       const membership = await prisma.membership.update({
         where: { id: req.params.membershipId },
         data: {
@@ -366,6 +444,9 @@ export function adminRoutes(): Router {
 
   router.post("/memberships/:membershipId/remove", requireCsrf, async (req, res, next) => {
     try {
+      const existing = await prisma.membership.findUniqueOrThrow({ where: { id: req.params.membershipId } });
+      await assertGroupAdmin(req.auth!.userId, existing.groupId);
+
       const membership = await prisma.membership.update({
         where: { id: req.params.membershipId },
         data: {
@@ -390,8 +471,21 @@ export function adminRoutes(): Router {
   router.get("/reports", async (req, res, next) => {
     try {
       const groupId = typeof req.query.groupId === "string" ? req.query.groupId : undefined;
+
+      let allowedGroupIds: string[] | undefined;
+      if (req.auth!.role !== UserRole.ADMIN) {
+        const ownedGroups = await prisma.group.findMany({ where: { createdById: req.auth!.userId }, select: { id: true } });
+        allowedGroupIds = ownedGroups.map(g => g.id);
+        if (groupId && !allowedGroupIds.includes(groupId)) {
+          return res.status(403).json({ error: "Forbidden" });
+        }
+        if (!groupId) {
+          if (allowedGroupIds.length === 0) return res.json({ reports: [] });
+        }
+      }
+
       const reports = await prisma.report.findMany({
-        where: groupId ? { groupId } : {},
+        where: groupId ? { groupId } : (allowedGroupIds ? { groupId: { in: allowedGroupIds } } : {}),
         include: {
           message: {
             include: {
@@ -423,6 +517,9 @@ export function adminRoutes(): Router {
 
   router.patch("/reports/:reportId", requireCsrf, async (req, res, next) => {
     try {
+      const existing = await prisma.report.findUniqueOrThrow({ where: { id: req.params.reportId } });
+      await assertGroupAdmin(req.auth!.userId, existing.groupId);
+
       const input = reportUpdateSchema.parse(req.body);
       const report = await prisma.report.update({
         where: { id: req.params.reportId },

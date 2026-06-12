@@ -138,7 +138,6 @@ export function NoTraceApp() {
   const [showQA, setShowQA] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
   const [identityLoading, setIdentityLoading] = useState(false);
-  const [ephemeralTarget, setEphemeralTarget] = useState<{ anonymousName: string; avatarSeed: string } | null>(null);
 
   const { socket, connected } = useSocket(accessToken);
   const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
@@ -410,7 +409,22 @@ export function NoTraceApp() {
       setNotice(error instanceof Error ? error.message : "Could not delete room.");
     }
   };
-
+  const createChannel = async () => {
+    const name = window.prompt("Enter new room name:");
+    if (!name) return;
+    try {
+      const data = await apiFetch<{ channel: Channel }>(`/api/admin/groups/${selectedCommunity.id}/channels`, {
+        method: "POST",
+        body: JSON.stringify({ name })
+      });
+      setCommunities((current) => current.map(c => 
+        c.id === selectedCommunity.id ? { ...c, channels: [...c.channels, data.channel] } : c
+      ));
+      setNotice(`Room #${name} created.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not create room.");
+    }
+  };
   const createInvite = async () => {
     try {
       const data = await apiFetch<{ code: string; requestUrl: string }>(
@@ -436,11 +450,11 @@ export function NoTraceApp() {
     const payload = {
       groupId: selectedCommunity.id,
       channelId: selectedChannel.id,
-      content,
+      content: kind === "MEME" ? "Shared an image" : content,
       messageType: kind,
       mediaUrl:
         kind === "MEME"
-          ? "https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&w=900&q=80"
+          ? content
           : undefined,
       mediaMime: kind === "FILE" ? "application/pdf" : kind === "MEME" ? "image/jpeg" : undefined,
       mediaSize: kind === "FILE" ? 620_000 : kind === "MEME" ? 420_000 : undefined,
@@ -601,6 +615,29 @@ export function NoTraceApp() {
     }
   };
 
+  const startDirectMessage = async (targetMembershipId: string) => {
+    try {
+      const data = await apiFetch<{ group: ApiGroup }>("/api/groups/dm", {
+        method: "POST",
+        body: JSON.stringify({ targetMembershipId })
+      });
+      const dmCommunity = toCommunity(data.group);
+      
+      setCommunities((current) => {
+        if (!current.some(c => c.id === dmCommunity.id)) {
+          return [dmCommunity, ...current];
+        }
+        return current;
+      });
+      
+      setSelectedCommunityId(dmCommunity.id);
+      setSelectedChannelId(dmCommunity.channels[0]?.id ?? "");
+      setNotice("Direct Message started.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not start DM.");
+    }
+  };
+
   const reportMessage = (messageId: string, reason: string) => {
     void apiFetch(`/api/messages/${messageId}/reports`, {
       method: "POST",
@@ -743,6 +780,7 @@ export function NoTraceApp() {
               setSelectedChannelId(channel.id);
               setMobileChannelsOpen(false);
             }}
+            onAddChannel={createChannel}
           />
         </section>
 
@@ -918,7 +956,7 @@ export function NoTraceApp() {
                   onDelete={deleteMessage}
                   onReport={reportMessage}
                   onReply={setReplyTo}
-                  onAvatarClick={(author) => setEphemeralTarget(author)}
+                  onAvatarClick={(author) => void startDirectMessage(author.id)}
                 />
               )}
 
@@ -929,12 +967,6 @@ export function NoTraceApp() {
                   onRotate={rotateIdentity}
                   onClose={() => setShowIdentity(false)}
                   isLoading={identityLoading}
-                />
-              )}
-              {ephemeralTarget && (
-                <EphemeralChat
-                  targetUser={ephemeralTarget}
-                  onClose={() => setEphemeralTarget(null)}
                 />
               )}
 
@@ -998,15 +1030,6 @@ export function NoTraceApp() {
             />
           )}
         </section>
-
-
-        {/* Phase 3: Ephemeral 1-on-1 chat — floating overlay */}
-        {ephemeralTarget && (
-          <EphemeralChat
-            targetUser={ephemeralTarget}
-            onClose={() => setEphemeralTarget(null)}
-          />
-        )}
       </main>
       )}
     </TooltipProvider>

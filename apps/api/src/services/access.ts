@@ -1,4 +1,4 @@
-import { MembershipStatus } from "@prisma/client";
+import { MembershipStatus, UserRole } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 
 export async function getApprovedMembership(userId: string, groupId: string) {
@@ -16,4 +16,18 @@ export async function assertApprovedMembership(userId: string, groupId: string) 
   }
 
   return membership;
+}
+
+export async function assertGroupAdmin(userId: string, groupId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role === UserRole.ADMIN) return true;
+
+  const group = await prisma.group.findUnique({ where: { id: groupId } });
+  if (!group || group.createdById !== userId) {
+    const error = new Error("Only the group creator or an administrator can perform this action.");
+    error.name = "ForbiddenError";
+    throw error;
+  }
+
+  return true;
 }

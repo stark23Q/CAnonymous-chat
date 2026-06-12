@@ -102,6 +102,7 @@ model Group {
   readReceiptsEnabled Boolean         @default(false)
   typingEnabled       Boolean         @default(true)
   e2eeMode            Boolean         @default(false)
+  isDirectMessage     Boolean         @default(false)
   retentionPolicy     RetentionPolicy @default(DAYS_7)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt

@@ -2,6 +2,7 @@ import type { Router } from "express";
 import express from "express";
 import { MembershipStatus, UserRole } from "@prisma/client";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireCsrf } from "../middleware/csrf.js";
@@ -37,6 +38,10 @@ const confessionSchema = z.object({
 
 const questionSchema = z.object({
   question: z.string().min(1).max(1_000)
+});
+
+const dmSchema = z.object({
+  targetMembershipId: z.string()
 });
 
 export function groupRoutes(): Router {
@@ -92,6 +97,84 @@ export function groupRoutes(): Router {
           }
         }))
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/dm", requireCsrf, async (req, res, next) => {
+    try {
+      const input = dmSchema.parse(req.body);
+      const targetMembership = await prisma.membership.findUnique({
+        where: { id: input.targetMembershipId }
+      });
+
+      if (!targetMembership) {
+        res.status(404).json({ error: "User not found." });
+        return;
+      }
+      
+      if (targetMembership.userId === req.auth!.userId) {
+        res.status(400).json({ error: "Cannot DM yourself." });
+        return;
+      }
+      
+      const existingDMs = await prisma.group.findMany({
+        where: {
+          isDirectMessage: true,
+          memberships: {
+            some: { userId: req.auth!.userId }
+          }
+        },
+        include: { memberships: true, channels: true }
+      });
+      
+      const existingDM = existingDMs.find(g => g.memberships.some(m => m.userId === targetMembership.userId));
+      if (existingDM) {
+        res.json({ group: existingDM });
+        return;
+      }
+      
+      const [myIdentity, theirIdentity] = await Promise.all([
+        createUniqueMembershipIdentity("dm"),
+        createUniqueMembershipIdentity("dm")
+      ]);
+      
+      const group = await prisma.group.create({
+        data: {
+          name: "Direct Message",
+          slug: `dm-${nanoid(12)}`,
+          description: "Private 1-on-1 conversation",
+          rules: "Be respectful.",
+          createdById: req.auth!.userId,
+          privacyMode: true,
+          isDirectMessage: true,
+          channels: {
+            create: [{ name: "general", position: 0 }]
+          },
+          memberships: {
+            create: [
+              {
+                userId: req.auth!.userId,
+                anonymousName: myIdentity.anonymousName,
+                avatarSeed: myIdentity.avatarSeed,
+                status: MembershipStatus.APPROVED,
+                joinedAt: new Date()
+              },
+              {
+                userId: targetMembership.userId,
+                anonymousName: theirIdentity.anonymousName,
+                avatarSeed: theirIdentity.avatarSeed,
+                status: MembershipStatus.APPROVED,
+                joinedAt: new Date()
+              }
+            ]
+          }
+        },
+        include: { channels: true, memberships: true }
+      });
+      
+      res.status(201).json({ group });
     } catch (error) {
       next(error);
     }

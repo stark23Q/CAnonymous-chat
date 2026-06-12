@@ -24,6 +24,8 @@ const EXPIRY_OPTIONS: { label: string; seconds: number | null }[] = [
   { label: "7 days", seconds: 604_800 }
 ];
 
+const EMOJIS = ["😂", "🔥", "✅", "❤️", "👍", "👎", "😭", "💀", "👀", "✨", "💯", "🎉"];
+
 export function Composer({
   channelName,
   replyTo,
@@ -71,6 +73,12 @@ export function Composer({
     },
     [onSend, onConfess, isConfession, onTyping, value, expiresInSeconds]
   );
+
+  const sendMeme = useCallback(() => {
+    const url = window.prompt("Paste an Image URL from the internet:");
+    if (!url) return;
+    onSend(url, "MEME", expiresInSeconds);
+  }, [onSend, expiresInSeconds]);
 
   const handleTyping = (next: string) => {
     setValue(next);
@@ -174,28 +182,48 @@ export function Composer({
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => send("MEME")}>
+                  <Button type="button" variant="ghost" size="iconSm" onClick={sendMeme}>
                     <ImageIcon className="h-4 w-4" aria-hidden />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Attach image</TooltipContent>
+                <TooltipContent>Attach image URL</TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => send("MEME")}>
+                  <Button type="button" variant="ghost" size="iconSm" onClick={sendMeme}>
                     <Gift className="h-4 w-4" aria-hidden />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>GIF</TooltipContent>
+                <TooltipContent>GIF URL</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => setValue((current) => `${current} 😂`)}>
-                    <Laugh className="h-4 w-4" aria-hidden />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Emoji</TooltipContent>
-              </Tooltip>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button type="button" variant="ghost" size="iconSm">
+                        <Laugh className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Emoji</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="center" className="w-48 p-2 bg-black/80 backdrop-blur border-white/10">
+                  <div className="grid grid-cols-4 gap-1">
+                    {EMOJIS.map((emoji) => (
+                      <Button
+                        key={emoji}
+                        type="button"
+                        variant="ghost"
+                        size="iconSm"
+                        className="text-lg hover:bg-white/10"
+                        onClick={() => handleTyping(`${value}${emoji}`)}
+                      >
+                        {emoji}
+                      </Button>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <div className="w-px h-4 bg-white/10 mx-1" />
 

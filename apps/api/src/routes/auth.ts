@@ -27,7 +27,8 @@ const joinRequestSchema = z.object({
 });
 
 const claimSchema = z.object({
-  token: z.string().min(16)
+  token: z.string().min(16),
+  customName: z.string().max(20).optional()
 });
 
 const refreshSchema = z.object({
@@ -194,15 +195,34 @@ export function authRoutes(): Router {
         createUniqueMembershipIdentity(groupId)
       ]);
 
+      let finalUserName = userIdentity.anonymousName;
+      let finalMembershipName = membershipIdentity.anonymousName;
+
+      if (input.customName) {
+        const customNameStr = sanitizeOptionalText(input.customName, 20);
+        if (customNameStr) {
+          finalUserName = customNameStr;
+          const existing = await prisma.membership.findUnique({
+            where: {
+              groupId_anonymousName: {
+                groupId,
+                anonymousName: customNameStr
+              }
+            }
+          });
+          finalMembershipName = existing ? `${customNameStr}-${Math.floor(Math.random() * 1000)}` : customNameStr;
+        }
+      }
+
       const user = await prisma.$transaction(async (tx) => {
         const createdUser = await tx.user.create({
           data: {
-            anonymousName: userIdentity.anonymousName,
+            anonymousName: finalUserName,
             avatarSeed: userIdentity.avatarSeed,
             memberships: {
               create: {
                 groupId,
-                anonymousName: membershipIdentity.anonymousName,
+                anonymousName: finalMembershipName,
                 avatarSeed: membershipIdentity.avatarSeed,
                 status: MembershipStatus.APPROVED,
                 joinedAt: new Date()

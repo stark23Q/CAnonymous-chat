@@ -16,11 +16,13 @@ const retentionLabels = {
 export function ChannelList({
   community,
   activeChannelId,
-  onSelect
+  onSelect,
+  onAddChannel
 }: {
   community: Community;
   activeChannelId: string;
   onSelect: (channel: Channel) => void;
+  onAddChannel?: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -39,7 +41,14 @@ export function ChannelList({
       </div>
 
       <div className="scrollbar-thin flex-1 overflow-y-auto px-2 py-3">
-        <div className="mb-2 px-2 text-[11px] font-bold uppercase text-muted-foreground">Channels</div>
+        <div className="mb-2 px-2 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase text-muted-foreground">Channels</span>
+          {onAddChannel && (
+            <Button type="button" variant="ghost" size="iconSm" onClick={onAddChannel} className="h-5 w-5 text-muted-foreground hover:text-foreground">
+              <span className="text-sm">+</span>
+            </Button>
+          )}
+        </div>
         <div className="space-y-1">
           {community.channels.map((channel) => {
             const active = channel.id === activeChannelId;

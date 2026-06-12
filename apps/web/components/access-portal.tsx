@@ -13,6 +13,7 @@ export function AccessPortal({
   onAuthenticated: (token: string, user: NoTraceUser) => void;
 }) {
   const [inviteToken, setInviteToken] = useState("");
+  const [customName, setCustomName] = useState("");
   const [password, setPassword] = useState("");
   const [userLoading, setUserLoading] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
@@ -27,7 +28,10 @@ export function AccessPortal({
     try {
       const res = await apiFetch<{ accessToken: string; user: NoTraceUser }>("/api/auth/join/claim", {
         method: "POST",
-        body: JSON.stringify({ token: inviteToken })
+        body: JSON.stringify({ 
+          token: inviteToken,
+          ...(customName.trim() ? { customName: customName.trim() } : {})
+        })
       });
       onAuthenticated(res.accessToken, res.user);
     } catch (err) {
@@ -79,6 +83,13 @@ export function AccessPortal({
               onChange={(e) => setInviteToken(e.target.value)}
               placeholder="Paste your invite token..."
               className="bg-background/50"
+            />
+            <Input
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              placeholder="Choose your name (optional)..."
+              className="bg-background/50"
+              maxLength={20}
             />
             <Button type="submit" disabled={userLoading || !inviteToken} className="w-full">
               {userLoading ? "Joining..." : "Enter Room"}

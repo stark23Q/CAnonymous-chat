@@ -64,7 +64,7 @@ export function MessageList({
   onDelete: (messageId: string) => void;
   onReport: (messageId: string, reason: string) => void;
   onReply: (message: ChatMessage) => void;
-  onAvatarClick?: (author: { anonymousName: string; avatarSeed: string }) => void;
+  onAvatarClick?: (author: { id: string; anonymousName: string; avatarSeed: string }) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
