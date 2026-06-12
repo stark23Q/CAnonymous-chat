@@ -39,6 +39,25 @@ app.use(errorHandler);
 
 const server = http.createServer(app);
 const stopRetentionSweeper = startRetentionSweeper();
+
+try {
+  logger.info("Running database startup migrations check...");
+  // 1. Ensure columns exist
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "isDirectMessage" BOOLEAN NOT NULL DEFAULT false;
+  `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "recoveryKeyHash" TEXT;
+  `);
+  // 2. Clean failed migrations
+  await prisma.$executeRawUnsafe(`
+    DELETE FROM "_prisma_migrations" WHERE "migration_name" = '20260612143450_recovery_and_dms' AND "finished_at" IS NULL;
+  `);
+  logger.info("Database startup migrations check completed successfully.");
+} catch (dbErr) {
+  logger.error({ err: dbErr }, "Database startup migrations check failed.");
+}
+
 await setupRealtime(server);
 
 server.listen(env.PORT, () => {
