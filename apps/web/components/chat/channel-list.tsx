@@ -1,6 +1,6 @@
 "use client";
 
-import { Hash, Mic2, Shield, TimerReset } from "lucide-react";
+import { Edit3, Hash, Mic2, Shield, TimerReset } from "lucide-react";
 import type { Channel, Community } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -17,12 +17,14 @@ export function ChannelList({
   community,
   activeChannelId,
   onSelect,
-  onAddChannel
+  onAddChannel,
+  onEditChannel
 }: {
   community: Community;
   activeChannelId: string;
   onSelect: (channel: Channel) => void;
   onAddChannel?: () => void;
+  onEditChannel?: (channel: Channel) => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -55,24 +57,36 @@ export function ChannelList({
             const Icon = channel.kind === "VOICE_FUTURE" ? Mic2 : Hash;
 
             return (
-              <Button
-                key={channel.id}
-                type="button"
-                variant="ghost"
-                className={cn(
-                  "h-9 w-full justify-start rounded-md px-2 text-sm transition-all",
-                  active ? "bg-primary/20 text-primary shadow-[0_0_15px_-3px] shadow-primary/20" : "hover:bg-white/5 hover:text-foreground hover:scale-[1.02]"
+              <div key={channel.id} className="group flex items-center">
+                <Button
+                  type="button"
+                  variant={active ? "secondary" : "ghost"}
+                  className={cn(
+                    "flex-1 justify-start gap-2",
+                    active ? "font-semibold" : "font-medium text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => onSelect(channel)}
+                >
+                  <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+                  <span className="truncate">{channel.name}</span>
+                  {channel.unread ? (
+                    <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                      {channel.unread}
+                    </span>
+                  ) : null}
+                </Button>
+                {onEditChannel && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="iconSm"
+                    className="opacity-0 group-hover:opacity-100 h-8 w-8 ml-1 shrink-0"
+                    onClick={() => onEditChannel(channel)}
+                  >
+                    <Edit3 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  </Button>
                 )}
-                onClick={() => onSelect(channel)}
-              >
-                <Icon className="h-4 w-4" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-left">{channel.name}</span>
-                {channel.unread ? (
-                  <span className="grid h-5 min-w-5 place-items-center rounded bg-accent px-1 text-[11px] font-bold text-accent-foreground">
-                    {channel.unread}
-                  </span>
-                ) : null}
-              </Button>
+              </div>
             );
           })}
         </div>

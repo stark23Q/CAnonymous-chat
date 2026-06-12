@@ -5,6 +5,7 @@ export const communities: Community[] = [
     id: "notrace-lounge",
     name: "NoTrace Lounge",
     description: "Invite-only anonymous room",
+    createdById: "1",
     rules: "Protect anonymity. No doxxing. No harassment. Report abusive content.",
     retentionPolicy: "DAYS_7",
     privacyMode: true,
@@ -21,9 +22,10 @@ export const communities: Community[] = [
     ]
   },
   {
-    id: "after-hours",
-    name: "After Hours",
-    description: "Small circle",
+    id: "g_1",
+    name: "General Tech",
+    createdById: "1",
+    description: "Discuss all things software and hardware.",
     rules: "Short-lived messages, no personal identifiers.",
     retentionPolicy: "HOURS_24",
     privacyMode: true,

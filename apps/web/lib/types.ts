@@ -10,6 +10,7 @@ export type Community = {
   name: string;
   slug?: string;
   description: string;
+  createdById: string;
   rules: string;
   retentionPolicy: "HOURS_24" | "DAYS_7" | "DAYS_30" | "NEVER";
   privacyMode: boolean;

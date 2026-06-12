@@ -14,16 +14,26 @@ type CurrentUser = {
 type IdentityPanelProps = {
   currentUser: CurrentUser;
   onRotate: () => void | Promise<void>;
+  onUpdateName: (newName: string) => Promise<void>;
   onClose: () => void;
   isLoading?: boolean;
 };
 
-export function IdentityPanel({ currentUser, onRotate, onClose, isLoading = false }: IdentityPanelProps) {
+export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, isLoading = false }: IdentityPanelProps) {
   const [confirming, setConfirming] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState(currentUser.anonymousName);
 
   const handleConfirm = async () => {
     await onRotate();
     setConfirming(false);
+  };
+
+  const handleSaveName = async () => {
+    if (newName.trim() && newName.trim() !== currentUser.anonymousName) {
+      await onUpdateName(newName.trim());
+    }
+    setIsEditingName(false);
   };
 
   return (
@@ -47,10 +57,31 @@ export function IdentityPanel({ currentUser, onRotate, onClose, isLoading = fals
       {/* Identity display */}
       <div className="flex flex-col items-center gap-3 px-4 py-5">
         <AnonymousAvatar seed={currentUser.avatarSeed} name={currentUser.anonymousName} size="lg" />
-        <div className="text-center">
-          <p className="text-base font-bold text-foreground">{currentUser.anonymousName}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Your current anonymous alias</p>
-        </div>
+        
+        {isEditingName ? (
+          <div className="flex w-full items-center gap-2 mt-2">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="flex-1 rounded border border-white/20 bg-black/50 px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              autoFocus
+              maxLength={20}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveName()}
+            />
+            <Button size="iconSm" variant="secondary" onClick={handleSaveName} disabled={isLoading}>
+              <ShieldCheck className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center group relative cursor-pointer" onClick={() => setIsEditingName(true)}>
+            <p className="text-base font-bold text-foreground hover:text-primary transition-colors flex items-center justify-center gap-2">
+              {currentUser.anonymousName}
+              <span className="text-[10px] uppercase opacity-50 group-hover:opacity-100 bg-white/10 px-1.5 py-0.5 rounded-sm">Edit</span>
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Your current anonymous alias</p>
+          </div>
+        )}
       </div>
 
       {/* Action area */}

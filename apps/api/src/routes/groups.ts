@@ -44,6 +44,10 @@ const dmSchema = z.object({
   targetMembershipId: z.string()
 });
 
+const updateNameSchema = z.object({
+  newName: z.string().min(1).max(20)
+});
+
 export function groupRoutes(): Router {
   const router = express.Router();
 
@@ -412,6 +416,27 @@ export function groupRoutes(): Router {
           anonymousName: identity.anonymousName,
           avatarSeed: identity.avatarSeed
         },
+        select: {
+          id: true,
+          anonymousName: true,
+          avatarSeed: true
+        }
+      });
+
+      res.json({ membership: updated });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.patch("/:groupId/membership/name", requireCsrf, async (req, res, next) => {
+    try {
+      const membership = await assertApprovedMembership(req.auth!.userId, req.params.groupId);
+      const input = updateNameSchema.parse(req.body);
+
+      const updated = await prisma.membership.update({
+        where: { id: membership.id },
+        data: { anonymousName: input.newName.trim() },
         select: {
           id: true,
           anonymousName: true,

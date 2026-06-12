@@ -24,6 +24,7 @@ export function AdminPanel({
   members,
   onApprove,
   onReject,
+  onUpdateName,
   onTogglePrivacy,
   onToggleReadReceipts,
   onToggleTyping,
@@ -42,6 +43,7 @@ export function AdminPanel({
   members: Member[];
   onApprove: (requestId: string) => void;
   onReject: (requestId: string) => void;
+  onUpdateName: (newName: string) => Promise<void>;
   onTogglePrivacy: (enabled: boolean) => void;
   onToggleReadReceipts: (enabled: boolean) => void;
   onToggleTyping: (enabled: boolean) => void;
@@ -154,9 +156,33 @@ export function AdminPanel({
 
           {/* ── SETTINGS TAB ── */}
           <TabsContent value="settings" className="scrollbar-thin m-0 flex-1 overflow-y-auto px-4 py-4">
-            <div className="space-y-3">
-              <SettingRow
-                icon={<LockKeyhole className="h-4 w-4" aria-hidden />}
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2 border-b border-white/5 pb-4">
+                <label className="text-sm font-semibold text-foreground">Group Name</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    defaultValue={community.name}
+                    className="h-8 bg-black/50 text-sm"
+                    maxLength={80}
+                    onBlur={(e) => {
+                      if (e.target.value.trim() && e.target.value.trim() !== community.name) {
+                        void onUpdateName(e.target.value.trim());
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const val = e.currentTarget.value.trim();
+                        if (val && val !== community.name) void onUpdateName(val);
+                      }
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Press Enter or click outside to save.</p>
+              </div>
+
+              <div className="space-y-3">
+                <SettingRow
+                  icon={<LockKeyhole className="h-4 w-4" aria-hidden />}
                 title="Privacy mode"
                 detail="Hide online and last-seen state"
                 checked={community.privacyMode}
@@ -215,6 +241,7 @@ export function AdminPanel({
                 Delete Room
               </Button>
             </div>
+          </div>
           </TabsContent>
 
           {/* ── MEMBERS TAB ── */}

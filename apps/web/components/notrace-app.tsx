@@ -15,6 +15,13 @@ import { AdminPanel } from "@/components/dashboard/admin-panel";
 import type { AdminReport } from "@/components/dashboard/admin-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch } from "@/lib/api";
@@ -66,6 +73,7 @@ function toCommunity(group: ApiGroup): Community {
     ...(group.slug ? { slug: group.slug } : {}),
     name: group.name,
     description: group.description,
+    createdById: group.createdById,
     rules: group.rules,
     retentionPolicy: group.retentionPolicy,
     privacyMode: group.privacyMode,
@@ -138,6 +146,9 @@ export function NoTraceApp() {
   const [showQA, setShowQA] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
   const [identityLoading, setIdentityLoading] = useState(false);
+
+  // Rename Dialogs
+  const [channelDialog, setChannelDialog] = useState<{ open: boolean; mode: "CREATE" | "RENAME"; channelId?: string; name: string }>({ open: false, mode: "CREATE", name: "" });
 
   const { socket, connected } = useSocket(accessToken);
   const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
@@ -409,22 +420,49 @@ export function NoTraceApp() {
       setNotice(error instanceof Error ? error.message : "Could not delete room.");
     }
   };
-  const createChannel = async () => {
-    const name = window.prompt("Enter new room name:");
-    if (!name) return;
+
+  const submitChannelDialog = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = channelDialog.name.trim();
+    if (!name || !accessToken || !selectedCommunityId) return;
+
     try {
-      const data = await apiFetch<{ channel: Channel }>(`/api/admin/groups/${selectedCommunity.id}/channels`, {
-        method: "POST",
-        body: JSON.stringify({ name })
-      });
-      setCommunities((current) => current.map(c => 
-        c.id === selectedCommunity.id ? { ...c, channels: [...c.channels, data.channel] } : c
-      ));
-      setNotice(`Room #${name} created.`);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Could not create room.");
+      if (channelDialog.mode === "CREATE") {
+        const res = await apiFetch<{ channel: Channel }>(`/api/admin/groups/${selectedCommunityId}/channels`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ name })
+        });
+        setCommunities((prev) =>
+          prev.map((c) =>
+            c.id === selectedCommunityId ? { ...c, channels: [...c.channels, res.channel] } : c
+          )
+        );
+        setSelectedChannelId(res.channel.id);
+        setNotice(`Channel #${res.channel.name} created.`);
+      } else if (channelDialog.mode === "RENAME" && channelDialog.channelId) {
+        const res = await apiFetch<{ channel: Channel }>(`/api/admin/groups/${selectedCommunityId}/channels/${channelDialog.channelId}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ name })
+        });
+        setCommunities((prev) =>
+          prev.map((c) =>
+            c.id === selectedCommunityId ? {
+              ...c,
+              channels: c.channels.map(ch => ch.id === channelDialog.channelId ? { ...ch, name } : ch)
+            } : c
+          )
+        );
+        setNotice(`Channel renamed to #${name}`);
+      }
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Failed to save channel");
+    } finally {
+      setChannelDialog({ open: false, mode: "CREATE", name: "" });
     }
   };
+
   const createInvite = async () => {
     try {
       const data = await apiFetch<{ code: string; requestUrl: string }>(
@@ -638,16 +676,56 @@ export function NoTraceApp() {
     }
   };
 
-  const reportMessage = (messageId: string, reason: string) => {
-    void apiFetch(`/api/messages/${messageId}/reports`, {
-      method: "POST",
-      body: JSON.stringify({ reason })
-    })
-      .then(() => setNotice("✅ Report sent to admins anonymously."))
-      .catch((error) => setNotice(error instanceof Error ? error.message : "Report failed."));
+  const reportMessage = async (messageId: string, reason: string) => {
+    try {
+      await apiFetch(`/api/groups/${selectedCommunity.id}/messages/${messageId}/report`, {
+        method: "POST",
+        body: JSON.stringify({ reason })
+      });
+      setNotice("Message reported to admin.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not report message.");
+    }
   };
 
+  const updateIdentityName = async (newName: string) => {
+    if (!accessToken || !user || !selectedCommunityId) return;
+    setIdentityLoading(true);
+    try {
+      const { membership } = await apiFetch<{ membership: { id: string; anonymousName: string; avatarSeed: string } }>(
+        `/api/groups/${selectedCommunityId}/membership/name`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ newName })
+        }
+      );
+      setUser({ ...user, anonymousName: membership.anonymousName });
+      setNotice("Your alias has been changed successfully.");
+    } catch (err) {
+      setNotice("Could not change name.");
+    } finally {
+      setIdentityLoading(false);
+    }
+  };
 
+  const updateGroupName = async (newName: string) => {
+    if (!accessToken || !user || !selectedCommunityId) return;
+    try {
+      await apiFetch(
+        `/api/admin/groups/${selectedCommunityId}/settings`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ name: newName })
+        }
+      );
+      setCommunities(prev => prev.map(c => c.id === selectedCommunityId ? { ...c, name: newName } : c));
+      setNotice("The group name has been updated.");
+    } catch (err) {
+      setNotice("Could not rename group.");
+    }
+  };
 
   const reviewReport = async (reportId: string, action: "DISMISSED" | "ACTIONED") => {
     try {
@@ -775,12 +853,17 @@ export function NoTraceApp() {
         >
           <ChannelList
             community={selectedCommunity}
-            activeChannelId={selectedChannel.id}
-            onSelect={(channel: Channel) => {
-              setSelectedChannelId(channel.id);
+            activeChannelId={selectedChannelId}
+            onSelect={(ch) => {
+              setSelectedChannelId(ch.id);
               setMobileChannelsOpen(false);
             }}
-            onAddChannel={createChannel}
+            {...(user?.role === "ADMIN" || selectedCommunity.createdById === user?.id
+              ? {
+                  onAddChannel: () => setChannelDialog({ open: true, mode: "CREATE", name: "" }),
+                  onEditChannel: (ch: Channel) => setChannelDialog({ open: true, mode: "RENAME", channelId: ch.id, name: ch.name })
+                }
+              : {})}
           />
         </section>
 
@@ -965,6 +1048,7 @@ export function NoTraceApp() {
                 <IdentityPanel
                   currentUser={{ anonymousName: user.anonymousName, avatarSeed: user.avatarSeed }}
                   onRotate={rotateIdentity}
+                  onUpdateName={updateIdentityName}
                   onClose={() => setShowIdentity(false)}
                   isLoading={identityLoading}
                 />
@@ -993,11 +1077,19 @@ export function NoTraceApp() {
               community={selectedCommunity}
               requests={requests}
               members={members}
-              onApprove={(requestId) => void approveRequest(requestId)}
-              onReject={(requestId) => void rejectRequest(requestId)}
+              reports={reports}
+              onApprove={approveRequest}
+              onReject={rejectRequest}
+              onUpdateName={updateGroupName}
+              busyRequestId={busyRequestId}
               onTogglePrivacy={(enabled) =>
                 void updateGroupSettings({ privacyMode: enabled }).catch((error) =>
                   setNotice(error instanceof Error ? error.message : "Privacy update failed.")
+                )
+              }
+              onToggleE2EE={(enabled) =>
+                void updateGroupSettings({ e2eeMode: enabled }).catch((error) =>
+                  setNotice(error instanceof Error ? error.message : "E2EE update failed.")
                 )
               }
               onToggleReadReceipts={(enabled) =>
@@ -1007,31 +1099,49 @@ export function NoTraceApp() {
               }
               onToggleTyping={(enabled) =>
                 void updateGroupSettings({ typingEnabled: enabled }).catch((error) =>
-                  setNotice(error instanceof Error ? error.message : "Typing update failed.")
+                  setNotice(error instanceof Error ? error.message : "Typing indicators update failed.")
                 )
               }
-              onToggleE2EE={(enabled) =>
-                void updateGroupSettings({ e2eeMode: enabled }).catch((error) =>
-                  setNotice(error instanceof Error ? error.message : "E2EE update failed.")
+              onRetentionChange={(policy) =>
+                void updateGroupSettings({ retentionPolicy: policy }).catch((error) =>
+                  setNotice(error instanceof Error ? error.message : "Retention update failed.")
                 )
               }
               onCreateInvite={() => void createInvite()}
               onDeleteRoom={() => void deleteCommunity()}
-              onRetentionChange={(retentionPolicy) =>
-                void updateGroupSettings({ retentionPolicy }).catch((error) =>
-                  setNotice(error instanceof Error ? error.message : "Retention update failed.")
-                )
-              }
+              onReviewReport={(reportId, action) => void reviewReport(reportId, action)}
               onToggleBan={(member) => void toggleBan(member)}
               latestInvite={latestInvite}
-              busyRequestId={busyRequestId}
-              reports={reports}
-              onReviewReport={(reportId, action) => void reviewReport(reportId, action)}
             />
           )}
         </section>
       </main>
       )}
+
+      {/* Channel Dialog */}
+      <Dialog open={channelDialog.open} onOpenChange={(open) => setChannelDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle>{channelDialog.mode === "CREATE" ? "Create New Channel" : "Rename Channel"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitChannelDialog} className="flex flex-col gap-4 mt-4">
+            <Input
+              placeholder="e.g., general, memes, study"
+              value={channelDialog.name}
+              onChange={(e) => setChannelDialog(prev => ({ ...prev, name: e.target.value }))}
+              className="bg-black/50 border-white/10"
+              maxLength={40}
+              autoFocus
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setChannelDialog(prev => ({ ...prev, open: false }))}>Cancel</Button>
+              <Button type="submit" disabled={!channelDialog.name.trim()}>
+                {channelDialog.mode === "CREATE" ? "Create Channel" : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }

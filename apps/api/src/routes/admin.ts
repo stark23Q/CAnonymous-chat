@@ -224,6 +224,34 @@ export function adminRoutes(): Router {
     }
   });
 
+  router.patch("/groups/:groupId/channels/:channelId", requireCsrf, async (req, res, next) => {
+    try {
+      await assertGroupAdmin(req.auth!.userId, req.params.groupId);
+      const name = typeof req.body.name === "string" ? sanitizeText(req.body.name, 40) : null;
+      if (!name) {
+        res.status(400).json({ error: "Channel name is required." });
+        return;
+      }
+
+      const channel = await prisma.channel.update({
+        where: { id: req.params.channelId, groupId: req.params.groupId },
+        data: { name }
+      });
+
+      await audit({
+        actorId: req.auth!.userId,
+        groupId: req.params.groupId,
+        action: "channel.updated",
+        targetId: channel.id,
+        metadata: { name }
+      });
+
+      res.json({ channel });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/groups/:groupId/invitations", requireCsrf, async (req, res, next) => {
     try {
       await assertGroupAdmin(req.auth!.userId, req.params.groupId);

@@ -14,6 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const EXPIRY_OPTIONS: { label: string; seconds: number | null }[] = [
@@ -47,13 +55,15 @@ export function Composer({
   const [dragging, setDragging] = useState(false);
   const [isConfessionState, setIsConfessionState] = useState(false);
   const [expiresInSeconds, setExpiresInSeconds] = useState<number | null>(null);
+  const [isMemeDialogOpen, setIsMemeDialogOpen] = useState(false);
+  const [memeUrlInput, setMemeUrlInput] = useState("");
   const typingTimeout = useRef<number | null>(null);
 
   const isConfession = forceConfessionMode || isConfessionState;
 
   const send = useCallback(
-    (kind: "TEXT" | "MEME" | "FILE" = "TEXT") => {
-      const content = value.trim();
+    (kind: "TEXT" | "MEME" | "FILE" = "TEXT", contentOverride?: string) => {
+      const content = contentOverride ?? value.trim();
       if (!content && kind === "TEXT") {
         return;
       }
@@ -74,11 +84,14 @@ export function Composer({
     [onSend, onConfess, isConfession, onTyping, value, expiresInSeconds]
   );
 
-  const sendMeme = useCallback(() => {
-    const url = window.prompt("Paste an Image URL from the internet:");
-    if (!url) return;
-    onSend(url, "MEME", expiresInSeconds);
-  }, [onSend, expiresInSeconds]);
+  const submitMemeUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (memeUrlInput.trim()) {
+      onSend(memeUrlInput.trim(), "MEME", expiresInSeconds);
+      setIsMemeDialogOpen(false);
+      setMemeUrlInput("");
+    }
+  };
 
   const handleTyping = (next: string) => {
     setValue(next);
@@ -182,19 +195,11 @@ export function Composer({
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={sendMeme}>
+                  <Button type="button" variant="ghost" size="iconSm" onClick={() => setIsMemeDialogOpen(true)}>
                     <ImageIcon className="h-4 w-4" aria-hidden />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Attach image URL</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={sendMeme}>
-                    <Gift className="h-4 w-4" aria-hidden />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>GIF URL</TooltipContent>
               </Tooltip>
               <DropdownMenu>
                 <Tooltip>
@@ -298,6 +303,28 @@ export function Composer({
           </div>
         </div>
       </div>
+
+      {/* Meme URL Dialog */}
+      <Dialog open={isMemeDialogOpen} onOpenChange={setIsMemeDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle>Send an Image</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitMemeUrl} className="flex flex-col gap-4 mt-4">
+            <Input
+              placeholder="Paste an image URL (e.g., https://.../image.png)"
+              value={memeUrlInput}
+              onChange={(e) => setMemeUrlInput(e.target.value)}
+              className="bg-black/50 border-white/10"
+              autoFocus
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setIsMemeDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={!memeUrlInput.trim()}>Send Image</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
