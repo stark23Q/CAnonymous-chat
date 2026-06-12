@@ -11,10 +11,10 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "NoTrace | Secure Anonymous Space 🛡️",
+  title: "NoTrace 🎭",
   description: "Invite-only anonymous community chat.",
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%238B4AFF"/><stop offset="100%" stop-color="%23009FE2"/></linearGradient></defs><circle cx="50" cy="50" r="45" fill="black" stroke="url(%23g)" stroke-width="8"/><path d="M50 22 L72 32 V55 C72 68 62 78 50 82 C38 78 28 68 28 55 V32 Z" fill="url(%23g)" opacity="0.9"/><path d="M50 30 L66 37 V53 C66 63 59 71 50 74 C41 71 34 63 34 53 V37 Z" fill="black"/></svg>'
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%238B4AFF"/><stop offset="100%" stop-color="%23009FE2"/></linearGradient></defs><path d="M20 40 C20 30 35 25 50 25 C65 25 80 30 80 40 C80 55 75 70 50 78 C25 70 20 55 20 40 Z" fill="black" stroke="url(%23g)" stroke-width="6"/><path d="M32 42 C36 38 44 38 46 44 C42 45 35 45 32 42 Z" fill="url(%23g)"/><path d="M68 42 C64 38 56 38 54 44 C58 45 65 45 68 42 Z" fill="url(%23g)"/><path d="M25 52 C28 55 35 55 38 52" stroke="url(%23g)" stroke-width="3" fill="none"/><path d="M75 52 C72 55 65 55 62 52" stroke="url(%23g)" stroke-width="3" fill="none"/><path d="M44 62 Q50 66 56 62" stroke="url(%23g)" stroke-width="4" fill="none" stroke-linecap="round"/></svg>'
   }
 };
 
