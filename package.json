@@ -1,0 +1,24 @@
+{
+  "name": "notrace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NoTrace: invite-only anonymous community chat with realtime messaging, privacy controls, moderation, and admin approval workflows.",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "corepack pnpm --parallel --filter @anonymous-chat/api --filter @anonymous-chat/web dev",
+    "dev:api": "corepack pnpm --filter @anonymous-chat/api dev",
+    "dev:web": "corepack pnpm --filter @anonymous-chat/web dev",
+    "start": "corepack pnpm --parallel --filter @anonymous-chat/api --filter @anonymous-chat/web start",
+    "build": "corepack pnpm -r build",
+    "typecheck": "corepack pnpm -r typecheck",
+    "lint": "corepack pnpm -r lint",
+    "db:generate": "corepack pnpm --filter @anonymous-chat/api prisma generate",
+    "db:migrate": "corepack pnpm --filter @anonymous-chat/api prisma migrate dev",
+    "db:deploy": "corepack pnpm --filter @anonymous-chat/api prisma migrate deploy",
+    "db:seed": "corepack pnpm --filter @anonymous-chat/api prisma db seed"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  }
+}

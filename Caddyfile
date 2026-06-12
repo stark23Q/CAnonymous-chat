@@ -1,0 +1,18 @@
+# Caddyfile
+
+# Replace localhost with your actual domain when deploying to a real server
+localhost {
+	# Route /api/* and Socket.io to the API backend
+	handle_path /api/* {
+		reverse_proxy api:4000
+	}
+	
+	handle /socket.io/* {
+		reverse_proxy api:4000
+	}
+
+	# Route everything else to the Next.js frontend
+	handle {
+		reverse_proxy web:3000
+	}
+}

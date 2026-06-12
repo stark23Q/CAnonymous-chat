@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NoTrace | Join the Void</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-primary": "#742be7",
+                    "on-primary-container": "#fffbff",
+                    "primary": "#d2bbff",
+                    "on-tertiary-container": "#fffcff",
+                    "surface": "#0e0e11",
+                    "primary-fixed-dim": "#d2bbff",
+                    "surface-tint": "#d2bbff",
+                    "foreground": "#f2f2f2",
+                    "on-tertiary-fixed": "#2f1500",
+                    "surface-container": "#221e28",
+                    "on-surface-variant": "#ccc3d8",
+                    "on-primary": "#3f008e",
+                    "primary-container": "#8b4aff",
+                    "on-secondary-container": "#00324a",
+                    "background": "#09090b",
+                    "error-container": "#93000a",
+                    "secondary-fixed": "#c8e6ff",
+                    "surface-dim": "#15121c",
+                    "on-primary-fixed": "#25005a",
+                    "tertiary-container": "#b25f00",
+                    "on-tertiary": "#4e2600",
+                    "primary-fixed": "#eaddff",
+                    "secondary-container": "#009fe2",
+                    "secondary": "#88ceff",
+                    "outline-variant": "#4a4455",
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "surface-container-lowest": "#100d16",
+                    "tertiary-fixed": "#ffdcc3",
+                    "border-subtle": "rgba(255, 255, 255, 0.05)",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-surface": "#e8dfee",
+                    "surface-container-low": "#1d1a24",
+                    "inverse-surface": "#e8dfee",
+                    "surface-variant": "#37333e",
+                    "surface-container-high": "#2c2833",
+                    "surface-bright": "#3c3743",
+                    "on-error-container": "#ffdad6",
+                    "on-error": "#690005",
+                    "tertiary-fixed-dim": "#ffb77e",
+                    "on-secondary-fixed": "#001e2f",
+                    "outline": "#958da1",
+                    "muted": "#222226",
+                    "error": "#ed2b4d",
+                    "tertiary": "#ffb77e",
+                    "on-background": "#e8dfee",
+                    "on-primary-fixed-variant": "#5a00c6",
+                    "surface-container-highest": "#37333e",
+                    "secondary-fixed-dim": "#88ceff",
+                    "inverse-on-surface": "#332e3a",
+                    "on-secondary": "#00344d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "1.5rem",
+                    "list-width": "320px",
+                    "container-padding": "2rem",
+                    "sidebar-width": "280px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Outfit"],
+                    "headline-lg": ["Outfit"],
+                    "headline-md": ["Outfit"],
+                    "body-md": ["Outfit"],
+                    "label-md": ["Outfit"],
+                    "body-lg": ["Outfit"],
+                    "label-sm": ["Outfit"]
+            },
+            "fontSize": {
+                    "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.05em", "fontWeight": "900"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #09090b;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .mesh-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(210, 187, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(136, 206, 255, 0.1) 0%, transparent 50%);
+            filter: blur(80px);
+        }
+
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(34, 30, 40, 0.7), rgba(15, 15, 20, 0.8));
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        .glow-on-hover:hover {
+            box-shadow: 0 0 20px rgba(210, 187, 255, 0.4);
+            transform: scale(1.02);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .pulse-element {
+            animation: pulse-slow 4s infinite ease-in-out;
+        }
+
+        /* Custom Scrollbar for dark mode */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0e0e11; }
+        ::-webkit-scrollbar-thumb { background: #37333e; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d2bbff; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface">
+<!-- Background Elements -->
+<div class="mesh-gradient"></div>
+<div class="fixed inset-0 z-0 opacity-20 pointer-events-none">
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] pulse-element"></div>
+<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-[120px] pulse-element" style="animation-delay: 2s;"></div>
+</div>
+<!-- Main Container -->
+<main class="relative z-10 min-h-screen flex items-center justify-center p-gutter">
+<!-- Join Card -->
+<div class="glass-panel w-full max-w-[440px] rounded-3xl p-10 flex flex-col items-center transition-all duration-500 hover:border-primary/20">
+<!-- Brand Identity -->
+<div class="mb-10 flex flex-col items-center">
+<div class="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mb-6 shadow-2xl shadow-primary/20">
+<span class="material-symbols-outlined text-on-primary-container text-4xl" data-icon="security">security</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-primary tracking-tighter mb-2">NoTrace</h1>
+<p class="font-body-md text-body-md text-outline text-center px-4">
+                    The sovereign communication layer for the modern age. Secure. Invisible. Immutable.
+                </p>
+</div>
+<!-- Login Actions -->
+<div class="w-full space-y-4">
+<!-- Primary Action -->
+<button class="w-full py-4 px-6 bg-primary text-on-primary font-label-md text-label-md rounded-xl flex items-center justify-center gap-3 glow-on-hover transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                    Join the Void
+                </button>
+<!-- Divider -->
+<div class="flex items-center gap-4 py-4">
+<div class="h-px flex-grow bg-white/5"></div>
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-widest">or</span>
+<div class="h-px flex-grow bg-white/5"></div>
+</div>
+<!-- Secondary Action -->
+<button class="w-full py-4 px-6 bg-white/5 hover:bg-white/10 text-on-surface font-label-md text-label-md rounded-xl flex items-center justify-center gap-3 transition-all duration-300 border border-white/5">
+<span class="material-symbols-outlined" data-icon="fingerprint">fingerprint</span>
+                    Anonymous Login
+                </button>
+<!-- Tertiary Action -->
+<button class="w-full py-3 text-outline hover:text-primary transition-colors duration-300 font-label-sm text-label-sm">
+                    Enter Access Key
+                </button>
+</div>
+<!-- Footer Details -->
+<div class="mt-12 flex flex-col items-center gap-4">
+<div class="flex gap-4">
+<span class="w-2 h-2 rounded-full bg-secondary pulse-element"></span>
+<span class="font-label-sm text-label-sm text-secondary tracking-widest uppercase">Nodes Online: 4,129</span>
+</div>
+<p class="font-label-sm text-label-sm text-outline-variant text-center leading-relaxed">
+                    By entering, you acknowledge the NoTrace cryptographic protocol. All data is ephemeral and self-destructing.
+                </p>
+</div>
+</div>
+</main>
+<!-- Background Decoration: Cyberpunk Grid Lines (Subtle) -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 80px 80px;"></div>
+<!-- Decorative Floating Elements -->
+<div class="fixed top-12 left-12 z-20 hidden lg:block">
+<div class="glass-panel px-4 py-2 rounded-full flex items-center gap-3">
+<div class="w-2 h-2 bg-secondary rounded-full"></div>
+<span class="font-label-sm text-label-sm text-on-surface/60">ENCRYPTED_SIGNAL_STABLE</span>
+</div>
+</div>
+<div class="fixed bottom-12 right-12 z-20 hidden lg:block">
+<div class="glass-panel px-4 py-2 rounded-full flex items-center gap-3">
+<span class="font-label-sm text-label-sm text-on-surface/60">V.0.9.42_STAGING</span>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="terminal">terminal</span>
+</div>
+</div>
+<!-- Micro-interaction Script -->
+<script>
+        document.addEventListener('mousemove', (e) => {
+            const card = document.querySelector('.glass-panel');
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Subtle parallax tilt effect
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 30;
+            const rotateY = (centerX - x) / 30;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        document.querySelector('.glass-panel').addEventListener('mouseleave', () => {
+            const card = document.querySelector('.glass-panel');
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+        });
+
+        // Initialize Material Symbols Weights
+        window.addEventListener('DOMContentLoaded', () => {
+            const symbols = document.querySelectorAll('.material-symbols-outlined');
+            symbols.forEach(symbol => {
+                if(symbol.getAttribute('data-weight') === 'fill') {
+                    symbol.style.fontVariationSettings = "'FILL' 1";
+                }
+            });
+        });
+    </script>
+</body></html>

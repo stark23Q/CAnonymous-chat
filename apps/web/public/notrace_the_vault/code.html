@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Vault | NoTrace Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "tertiary-fixed": "#ffdcc3",
+                    "error": "#ed2b4d",
+                    "on-secondary-container": "#00324a",
+                    "primary-container": "#8b4aff",
+                    "primary": "#d2bbff",
+                    "on-secondary-fixed": "#001e2f",
+                    "secondary-fixed": "#c8e6ff",
+                    "on-surface-variant": "#ccc3d8",
+                    "surface-container-highest": "#37333e",
+                    "on-primary-fixed": "#25005a",
+                    "surface": "#0e0e11",
+                    "error-container": "#93000a",
+                    "inverse-primary": "#742be7",
+                    "background": "#09090b",
+                    "surface-variant": "#37333e",
+                    "primary-fixed-dim": "#d2bbff",
+                    "outline-variant": "#4a4455",
+                    "on-surface": "#e8dfee",
+                    "inverse-surface": "#e8dfee",
+                    "surface-tint": "#d2bbff",
+                    "foreground": "#f2f2f2",
+                    "secondary-container": "#009fe2",
+                    "surface-dim": "#15121c",
+                    "surface-container-high": "#2c2833",
+                    "inverse-on-surface": "#332e3a",
+                    "outline": "#958da1",
+                    "muted": "#222226",
+                    "surface-container-low": "#1d1a24",
+                    "on-primary-fixed-variant": "#5a00c6",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-lowest": "#100d16",
+                    "tertiary-container": "#b25f00",
+                    "tertiary": "#ffb77e",
+                    "primary-fixed": "#eaddff",
+                    "on-error": "#690005",
+                    "on-primary": "#3f008e",
+                    "surface-bright": "#3c3743",
+                    "secondary-fixed-dim": "#88ceff",
+                    "on-tertiary": "#4e2600",
+                    "surface-container": "#221e28",
+                    "tertiary-fixed-dim": "#ffb77e",
+                    "on-tertiary-container": "#fffcff",
+                    "on-tertiary-fixed": "#2f1500",
+                    "on-background": "#e8dfee",
+                    "on-secondary": "#00344d",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "secondary": "#88ceff",
+                    "on-primary-container": "#fffbff",
+                    "border-subtle": "rgba(255, 255, 255, 0.05)"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "1.5rem",
+                    "sidebar-width": "280px",
+                    "list-width": "320px",
+                    "container-padding": "2rem"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Outfit"],
+                    "label-sm": ["Outfit"],
+                    "headline-md": ["Outfit"],
+                    "body-lg": ["Outfit"],
+                    "label-md": ["Outfit"],
+                    "headline-xl": ["Outfit"],
+                    "body-md": ["Outfit"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.05em", "fontWeight": "900"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #09090b;
+            color: #e8dfee;
+            font-family: 'Outfit', sans-serif;
+            overflow-x: hidden;
+        }
+        .mesh-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(139, 74, 255, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 159, 226, 0.08) 0%, transparent 40%);
+        }
+        .glass-panel {
+            background: rgba(15, 15, 20, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-card-heavy {
+            background: linear-gradient(145deg, rgba(30, 30, 40, 0.7), rgba(15, 15, 20, 0.8));
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .neon-glow-primary {
+            filter: drop-shadow(0 0 8px rgba(210, 187, 255, 0.4));
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.8s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen">
+<div class="mesh-gradient"></div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/60 backdrop-blur-md border-b border-border-subtle shadow-2xl flex items-center justify-between px-container-padding h-16">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-headline-md">security</span>
+<span class="font-headline-md text-headline-md font-black tracking-tighter text-primary drop-shadow-[0_0_8px_rgba(210,187,255,0.4)]">NOTRACE</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Channels</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Secure</a>
+<a class="font-label-md text-label-md text-primary filter drop-shadow-[0_0_5px_rgba(210,187,255,0.6)]" href="#">Vault</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">Settings</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-white/5 p-2 rounded-full transition-colors scale-95 active:scale-90">notifications</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-xs">AD</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-container-padding max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-2">The Vault</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Centralized security intelligence and asset management.</p>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-3 bg-error/10 border border-error/20 text-error rounded-xl font-label-md text-label-md flex items-center gap-2 hover:bg-error hover:text-on-error transition-all active:scale-95 group" id="purge-btn">
+<span class="material-symbols-outlined text-base">delete_sweep</span>
+                    PURGE ALL ASSETS
+                </button>
+</div>
+</div>
+<!-- Bento Grid for Metrics -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+<!-- Node Health Card -->
+<div class="glass-card-heavy p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-6xl">dns</span>
+</div>
+<div class="relative w-40 h-40 mb-6">
+<svg class="w-full h-full">
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="rgba(255,255,255,0.05)" stroke-width="8"></circle>
+<circle class="progress-ring text-secondary drop-shadow-[0_0_10px_rgba(136,206,255,0.5)]" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="44" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg text-headline-lg text-secondary">94%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">STABLE</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Node Health</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-center">Global distributed nodes operating within optimal latency ranges.</p>
+</div>
+<!-- Traffic Encryption Card -->
+<div class="glass-card-heavy p-8 rounded-3xl flex flex-col items-center justify-center relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity">
+<span class="material-symbols-outlined text-6xl">enhanced_encryption</span>
+</div>
+<div class="relative w-40 h-40 mb-6">
+<svg class="w-full h-full">
+<circle cx="80" cy="80" fill="transparent" r="70" stroke="rgba(255,255,255,0.05)" stroke-width="8"></circle>
+<circle class="progress-ring text-primary drop-shadow-[0_0_10px_rgba(210,187,255,0.5)]" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="8.8" stroke-width="8"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="font-headline-lg text-headline-lg text-primary">98%</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">ACTIVE</span>
+</div>
+</div>
+<h3 class="font-headline-md text-headline-md mb-1">Traffic Encryption</h3>
+<p class="font-body-md text-body-md text-on-surface-variant text-center">AES-256 GCM tunneling across all active communication channels.</p>
+</div>
+<!-- System Status -->
+<div class="glass-card-heavy p-8 rounded-3xl flex flex-col justify-between">
+<div>
+<h3 class="font-headline-md text-headline-md mb-4 flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                        Live Status
+                    </h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+<span class="font-label-md text-label-md text-on-surface-variant">Active Sessions</span>
+<span class="font-body-lg text-body-lg text-primary">12,482</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+<span class="font-label-md text-label-md text-on-surface-variant">Data Throughput</span>
+<span class="font-body-lg text-body-lg text-secondary">1.2 GB/s</span>
+</div>
+<div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
+<span class="font-label-md text-label-md text-on-surface-variant">Threat Level</span>
+<span class="font-body-lg text-body-lg text-on-surface">Minimal</span>
+</div>
+</div>
+</div>
+<div class="mt-6">
+<button class="w-full py-4 bg-primary text-on-primary font-label-md text-label-md rounded-2xl hover:scale-[102%] transition-all shadow-primary/40 shadow-lg">VIEW AUDIT LOGS</button>
+</div>
+</div>
+</div>
+<!-- Secure Assets List -->
+<section class="glass-panel rounded-3xl p-8 mb-10 overflow-hidden">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline-md text-headline-md">Secure Assets</h2>
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 rounded-lg bg-white/5 text-on-surface-variant hover:text-primary transition-colors">filter_list</button>
+<button class="material-symbols-outlined p-2 rounded-lg bg-white/5 text-on-surface-variant hover:text-primary transition-colors">search</button>
+</div>
+</div>
+<div class="space-y-3" id="asset-list">
+<!-- Asset Item 1 -->
+<div class="asset-item flex flex-col md:flex-row items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all group">
+<div class="flex items-center gap-4 w-full md:w-auto mb-4 md:mb-0">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">lock_reset</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">root_access_keys.enc</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60">2.4 MB • Created 2h ago</p>
+</div>
+</div>
+<div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+<span class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-[10px] font-bold tracking-widest uppercase">High Priority</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-white/10 text-on-surface-variant transition-colors">download</button>
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-error/10 text-error transition-colors">delete</button>
+</div>
+</div>
+</div>
+<!-- Asset Item 2 -->
+<div class="asset-item flex flex-col md:flex-row items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all group">
+<div class="flex items-center gap-4 w-full md:w-auto mb-4 md:mb-0">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">folder_zip</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">user_metadata_fragment_09.bak</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60">15.8 MB • Created 6h ago</p>
+</div>
+</div>
+<div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+<span class="px-3 py-1 rounded-full bg-white/5 text-on-surface-variant text-[10px] font-bold tracking-widest uppercase">Archive</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-white/10 text-on-surface-variant transition-colors">download</button>
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-error/10 text-error transition-colors">delete</button>
+</div>
+</div>
+</div>
+<!-- Asset Item 3 -->
+<div class="asset-item flex flex-col md:flex-row items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all group">
+<div class="flex items-center gap-4 w-full md:w-auto mb-4 md:mb-0">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">shield_with_heart</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">emergency_node_snapshot.iso</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60">450.2 MB • Created 1d ago</p>
+</div>
+</div>
+<div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold tracking-widest uppercase">Critical</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-white/10 text-on-surface-variant transition-colors">download</button>
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-error/10 text-error transition-colors">delete</button>
+</div>
+</div>
+</div>
+<!-- Asset Item 4 -->
+<div class="asset-item flex flex-col md:flex-row items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/20 transition-all group">
+<div class="flex items-center gap-4 w-full md:w-auto mb-4 md:mb-0">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container/20 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined">history_edu</span>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface">legal_compliance_v2.pdf.enc</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant/60">1.1 MB • Created 2d ago</p>
+</div>
+</div>
+<div class="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+<span class="px-3 py-1 rounded-full bg-white/5 text-on-surface-variant text-[10px] font-bold tracking-widest uppercase">Compliance</span>
+<div class="flex gap-2">
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-white/10 text-on-surface-variant transition-colors">download</button>
+<button class="material-symbols-outlined p-2 rounded-lg hover:bg-error/10 text-error transition-colors">delete</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Decorative background imagery for depth -->
+<div class="grid grid-cols-2 gap-4 h-64 opacity-40 grayscale hover:grayscale-0 transition-all duration-700 pointer-events-none">
+<div class="rounded-3xl overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A macro close-up of a high-tech circuit board illuminated by neon violet and cyan lights. The depth of field is shallow, focusing on the intricate pathways and microchips. The overall aesthetic is dark and cyber-tech, with a sophisticated futuristic mood and atmospheric smoke." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAIWwnQgbsWXr0iQ4Tjm-ctuJlETL7HZO9U73TX_SVUknt9zDhjmrKvvxqzA3_4Ej60OD6QRgEdyiPjZ4EmMQ9f-r_GwYA_fHx09aeZUFaP0cb3iqFgMnw2G7HxIwRR-GQHiPZIELdOUFmRhBLGWQxlXMnGD0KWkwnGM94hHa4I0AgIXV5r-aVHaw4T14ePyUxLGlxU23A1TFjQchIM1UsjMx0hC4Pq9OwG91cBZSLBZKAwGZYIdGOEhQVhkTgxPAFMDDfvOxkS6y0"/>
+</div>
+<div class="rounded-3xl overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A server room filled with racks of glowing hardware in a deep obsidian environment. Beams of electric violet light slice through the dark, reflecting off metallic surfaces and glass panels. The scene captures an aura of high-level security, anonymity, and advanced computing power." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBC7SNipJnqR1gBpJYln4AJKhAyuqGfXHvY23mcbMqL9zcZnZ4RCcAFx1z9EYMNCFVMISF_sd3Z7kXwc9d6opxBK85XAZhh16jwD77MEOCOJHtKoeLTHgIMj0D9HBXXFQrT97xJv_DW5WbQ6Xe6yA4xCKuiULzyvwLMg_Js4bcwBB-FkvucLMGUDW9dV7H7YFtBZWvyf5GvOAh2f7P7rtx81VsyH-sGu07kL4sopwyEppcCJZkW524cG9kKxfpjx0fawK9jSOY40w"/>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface-container-lowest/60 backdrop-blur-xl border-t border-border-subtle shadow-[0_-10px_25px_rgba(0,0,0,0.5)] flex justify-around items-center h-20 px-6">
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined">hub</span>
+<span class="font-label-sm text-label-sm">Channels</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined">shield_lock</span>
+<span class="font-label-sm text-label-sm">Secure</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary filter drop-shadow-[0_0_5px_rgba(210,187,255,0.6)] active:scale-95 duration-200">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-sm text-label-sm">Vault</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant/60 hover:text-primary/80 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined">settings_cell</span>
+<span class="font-label-sm text-label-sm">Settings</span>
+</button>
+</nav>
+<script>
+        // Micro-interaction for Purge Button
+        const purgeBtn = document.getElementById('purge-btn');
+        const assetList = document.getElementById('asset-list');
+        
+        purgeBtn.addEventListener('click', () => {
+            if(confirm('Are you sure you want to PERMANENTLY purge all assets? This action is irreversible.')) {
+                const items = document.querySelectorAll('.asset-item');
+                items.forEach((item, index) => {
+                    setTimeout(() => {
+                        item.style.transform = 'translateX(100px)';
+                        item.style.opacity = '0';
+                        setTimeout(() => item.remove(), 300);
+                    }, index * 100);
+                });
+                
+                setTimeout(() => {
+                    assetList.innerHTML = '<div class="text-center py-12 text-on-surface-variant/40 font-label-md italic">No secure assets found. Database purged.</div>';
+                }, items.length * 100 + 300);
+            }
+        });
+
+        // Hover effect for progress rings
+        document.querySelectorAll('.glass-card-heavy').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                const ring = card.querySelector('.progress-ring');
+                if(ring) {
+                    ring.style.strokeWidth = '12';
+                }
+            });
+            card.addEventListener('mouseleave', () => {
+                const ring = card.querySelector('.progress-ring');
+                if(ring) {
+                    ring.style.strokeWidth = '8';
+                }
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,385 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  BANNED
+  REMOVED
+}
+
+enum ChannelKind {
+  TEXT
+  VOICE_FUTURE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  GIF
+  MEME
+  VIDEO
+  FILE
+  SYSTEM
+}
+
+enum RetentionPolicy {
+  HOURS_24
+  DAYS_7
+  DAYS_30
+  NEVER
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TokenPurpose {
+  JOIN
+  MAGIC_LINK
+  REFRESH
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
+enum ModerationStatus {
+  CLEAN
+  FLAGGED
+  BLOCKED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  anonymousName String
+  avatarSeed    String
+  role          UserRole  @default(MEMBER)
+  publicKey     String?
+  createdAt     DateTime  @default(now())
+  lastActiveAt  DateTime?
+
+  createdGroups Group[]        @relation("GroupCreator")
+  memberships   Membership[]
+  messages      Message[]
+  reactions     Reaction[]
+  reports       Report[]       @relation("Reporter")
+  sessions      AuthSession[]
+  auditLogs     AuditLog[]     @relation("AuditActor")
+  polls         Poll[]
+  pollVotes     PollVote[]
+  confessions   Confession[]
+  questions     Question[]
+
+  @@index([role])
+}
+
+model Group {
+  id                  String          @id @default(cuid())
+  name                String
+  slug                String          @unique
+  description         String          @db.Text
+  rules               String          @db.Text
+  createdById         String
+  privacyMode         Boolean         @default(true)
+  readReceiptsEnabled Boolean         @default(false)
+  typingEnabled       Boolean         @default(true)
+  e2eeMode            Boolean         @default(false)
+  retentionPolicy     RetentionPolicy @default(DAYS_7)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  createdBy    User          @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  channels     Channel[]
+  memberships  Membership[]
+  invitations  Invitation[]
+  joinRequests JoinRequest[]
+  messages     Message[]
+  reports      Report[]
+  polls        Poll[]
+  confessions  Confession[]
+  questions    Question[]
+  auditLogs    AuditLog[]
+
+  @@index([createdById])
+}
+
+model Channel {
+  id        String      @id @default(cuid())
+  groupId   String
+  name      String
+  kind      ChannelKind @default(TEXT)
+  position  Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  messages Message[]
+  polls    Poll[]
+
+  @@unique([groupId, name])
+  @@index([groupId, position])
+}
+
+model Membership {
+  id            String           @id @default(cuid())
+  userId        String
+  groupId       String
+  anonymousName String
+  avatarSeed    String
+  status        MembershipStatus @default(PENDING)
+  joinedAt      DateTime?
+  bannedAt      DateTime?
+  removedAt     DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([userId, groupId])
+  @@unique([groupId, anonymousName])
+  @@index([groupId, status])
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  groupId     String
+  codeHash    String    @unique
+  createdById String
+  label       String?
+  maxUses     Int?
+  useCount    Int       @default(0)
+  expiresAt   DateTime?
+  disabledAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  group        Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  joinRequests JoinRequest[]
+
+  @@index([groupId])
+  @@index([expiresAt])
+}
+
+model JoinRequest {
+  id               String            @id @default(cuid())
+  groupId          String
+  invitationId     String?
+  status           JoinRequestStatus @default(PENDING)
+  reason           String?           @db.Text
+  requestedAlias   String?
+  approvalTokenHash String?
+  decidedById      String?
+  decidedAt        DateTime?
+  createdAt        DateTime          @default(now())
+
+  group      Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+
+  @@index([groupId, status])
+  @@index([createdAt])
+}
+
+model AuthSession {
+  id               String    @id @default(cuid())
+  userId           String
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OneTimeToken {
+  id          String       @id @default(cuid())
+  purpose     TokenPurpose
+  tokenHash   String       @unique
+  userId      String?
+  groupId     String?
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([purpose, expiresAt])
+}
+
+model Message {
+  id               String           @id @default(cuid())
+  groupId          String
+  channelId        String
+  userId           String
+  membershipId     String
+  content          String?          @db.Text
+  messageType      MessageType      @default(TEXT)
+  mediaUrl         String?
+  mediaKey         String?
+  mediaMime        String?
+  mediaSize        Int?
+  replyToId        String?
+  threadRootId     String?
+  moderationStatus ModerationStatus @default(CLEAN)
+  moderationReason String?
+  createdAt        DateTime         @default(now())
+  expiresAt        DateTime?
+  deletedAt        DateTime?
+  deletedById      String?
+
+  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  channel    Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  replyTo    Message?   @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies    Message[]  @relation("MessageReplies")
+  threadRoot Message?   @relation("ThreadMessages", fields: [threadRootId], references: [id], onDelete: SetNull)
+  thread     Message[]  @relation("ThreadMessages")
+  reactions  Reaction[]
+  reports    Report[]
+
+  @@index([groupId, channelId, createdAt])
+  @@index([expiresAt])
+  @@index([replyToId])
+  @@index([threadRootId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  groupId     String
+  messageId   String
+  reporterId  String
+  reason      String       @db.Text
+  status      ReportStatus @default(OPEN)
+  createdAt   DateTime     @default(now())
+  reviewedAt  DateTime?
+  reviewedById String?
+
+  group    Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  message  Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  reporter User    @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, status])
+  @@index([messageId])
+}
+
+model Poll {
+  id          String    @id @default(cuid())
+  groupId     String
+  channelId   String
+  createdById String
+  question    String
+  closesAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  group     Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  channel   Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  createdBy User         @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  options   PollOption[]
+  votes     PollVote[]
+
+  @@index([groupId, createdAt])
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  label  String
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId])
+}
+
+model PollVote {
+  id        String   @id @default(cuid())
+  pollId    String
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId])
+}
+
+model Confession {
+  id          String    @id @default(cuid())
+  groupId     String
+  createdById String
+  content     String    @db.Text
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  deletedAt   DateTime?
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model Question {
+  id          String    @id @default(cuid())
+  groupId     String
+  createdById String
+  question    String    @db.Text
+  answer      String?   @db.Text
+  answeredAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  groupId   String?
+  action    String
+  targetId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  actor User?  @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  group Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+  @@index([actorId])
+}

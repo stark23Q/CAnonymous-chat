@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NoTrace | Secure Chat</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#15121c",
+                      "on-primary-container": "#fffbff",
+                      "on-secondary-fixed": "#001e2f",
+                      "on-primary-fixed-variant": "#5a00c6",
+                      "error": "#ed2b4d",
+                      "secondary": "#88ceff",
+                      "primary-container": "#8b4aff",
+                      "border-subtle": "rgba(255, 255, 255, 0.05)",
+                      "surface-bright": "#3c3743",
+                      "surface-container-highest": "#37333e",
+                      "on-tertiary-fixed": "#2f1500",
+                      "error-container": "#93000a",
+                      "outline-variant": "#4a4455",
+                      "surface-container-low": "#1d1a24",
+                      "outline": "#958da1",
+                      "on-secondary-fixed-variant": "#004c6e",
+                      "background": "#09090b",
+                      "on-secondary": "#00344d",
+                      "inverse-on-surface": "#332e3a",
+                      "on-secondary-container": "#00324a",
+                      "tertiary-container": "#b25f00",
+                      "surface-container-lowest": "#100d16",
+                      "on-tertiary": "#4e2600",
+                      "on-tertiary-container": "#fffcff",
+                      "muted": "#222226",
+                      "on-error-container": "#ffdad6",
+                      "on-primary-fixed": "#25005a",
+                      "tertiary-fixed": "#ffdcc3",
+                      "on-surface-variant": "#ccc3d8",
+                      "on-error": "#690005",
+                      "tertiary": "#ffb77e",
+                      "inverse-primary": "#742be7",
+                      "primary-fixed": "#eaddff",
+                      "surface-container-high": "#2c2833",
+                      "on-primary": "#3f008e",
+                      "surface-container": "#221e28",
+                      "surface-variant": "#37333e",
+                      "foreground": "#f2f2f2",
+                      "on-background": "#e8dfee",
+                      "secondary-fixed-dim": "#88ceff",
+                      "surface-tint": "#d2bbff",
+                      "secondary-container": "#009fe2",
+                      "tertiary-fixed-dim": "#ffb77e",
+                      "inverse-surface": "#e8dfee",
+                      "primary-fixed-dim": "#d2bbff",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "primary": "#d2bbff",
+                      "secondary-fixed": "#c8e6ff",
+                      "surface": "#0e0e11",
+                      "on-surface": "#e8dfee"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-padding": "2rem",
+                      "gutter": "1.5rem",
+                      "sidebar-width": "280px",
+                      "list-width": "320px"
+              },
+              "fontFamily": {
+                      "headline-xl": ["Outfit"],
+                      "body-md": ["Outfit"],
+                      "label-md": ["Outfit"],
+                      "label-sm": ["Outfit"],
+                      "headline-md": ["Outfit"],
+                      "headline-lg": ["Outfit"],
+                      "body-lg": ["Outfit"]
+              },
+              "fontSize": {
+                      "headline-xl": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.05em", "fontWeight": "900"}],
+                      "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                      "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #050508;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(21, 18, 28, 0.4);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 20px rgba(210, 187, 255, 0.03);
+        }
+
+        .hyper-glass {
+            background: rgba(29, 26, 36, 0.6);
+            backdrop-filter: blur(48px);
+            -webkit-backdrop-filter: blur(48px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 
+                inset 0 1px 1px rgba(255,255,255,0.1),
+                0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .sent-bubble {
+            background: linear-gradient(135deg, rgba(139, 74, 255, 0.3) 0%, rgba(0, 159, 226, 0.3) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(210, 187, 255, 0.4);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 20px rgba(139, 74, 255, 0.2);
+        }
+
+        .received-bubble {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom-left-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.02);
+        }
+
+        .data-stream {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(136, 206, 255, 0.4), transparent);
+            animation: data-pulse 4s infinite linear;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes data-pulse {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(1000%); opacity: 0; }
+        }
+
+        .brand-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: -1;
+            filter: grayscale(1) brightness(2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(210, 187, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .active-encryption-pulse {
+            animation: pulse-glow 2.5s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0 rgba(136, 206, 255, 0.8); }
+            70% { box-shadow: 0 0 20px 15px rgba(136, 206, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(136, 206, 255, 0); }
+        }
+
+        .encryption-status-glow {
+            text-shadow: 0 0 12px rgba(136, 206, 255, 0.9);
+        }
+
+        .interactive-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(139, 74, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 60;
+            border-radius: 100%;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+        }
+        
+        .header-max-weight {
+            font-weight: 900;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Interactive Glow Follower -->
+<div class="interactive-glow" id="cursor-glow"></div>
+<!-- Brand Watermark -->
+<div class="brand-watermark">
+    https://lh3.googleusercontent.com/aida/AP1WRLusYQuV0dWqOKXTy5MD5aoPY-HxpuzdzGSynPYOdvySvpnwKq_e1lIHrKb7qbIpARfDPNVBio_dce46gMt2wHRaefV9wwwsLl0vxkiozXPkqtnlqxnBD_u4crvPSbL7ULjxpNytOHBH4vakxmMz8nCtPQGUoC00Ab1h42rlCQUqiFS8DLI1BMfrx19ZS4vDxODALS-JKNClW1KgI0wk3j5pDocevgOBMAFzJQkk3zdZtY8_G5BJs4wTBBw
+</div>
+<!-- Three.js 3D Background Integration -->
+<div class="fixed inset-0 w-full h-full bg-transparent z-0 pointer-events-none">
+<div id="threejs-container-BG" style="width:100%;height:100%"></div>
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<script>
+    (function() {
+      const container = document.getElementById('threejs-container-BG');
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0x8b4aff, 4, 100);
+      pointLight.position.set(15, 15, 15);
+      scene.add(pointLight);
+
+      const triangles = [];
+      const triangleCount = 24;
+      const colors = [0x8b4aff, 0x0ba3e6, 0x3c3743];
+
+      for (let i = 0; i < triangleCount; i++) {
+        const geometry = new THREE.TetrahedronGeometry(Math.random() * 2.5 + 0.5);
+        const material = new THREE.MeshPhongMaterial({
+          color: colors[Math.floor(Math.random() * colors.length)],
+          transparent: true,
+          opacity: 0.5,
+          shininess: 120,
+          wireframe: Math.random() > 0.7
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((Math.random() - 0.5) * 50, (Math.random() - 0.5) * 50, (Math.random() - 0.5) * 30 - 15);
+        mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        mesh.userData = { 
+            rotationSpeed: (Math.random() - 0.5) * 0.01, 
+            floatSpeed: (Math.random() - 0.5) * 0.006, 
+            floatOffset: Math.random() * Math.PI * 2,
+            parallaxFactor: Math.random() * 0.5 + 0.2
+        };
+        scene.add(mesh);
+        triangles.push(mesh);
+      }
+
+      camera.position.z = 25;
+
+      let mouseX = 0, mouseY = 0;
+      let scrollY = 0;
+
+      window.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth - 0.5) * 10;
+        mouseY = (e.clientY / window.innerHeight - 0.5) * 10;
+        
+        const glow = document.getElementById('cursor-glow');
+        glow.style.left = e.clientX + 'px';
+        glow.style.top = e.clientY + 'px';
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if(e.touches.length > 0) {
+            mouseX = (e.touches[0].clientX / window.innerWidth - 0.5) * 10;
+            mouseY = (e.touches[0].clientY / window.innerHeight - 0.5) * 10;
+            const glow = document.getElementById('cursor-glow');
+            glow.style.left = e.touches[0].clientX + 'px';
+            glow.style.top = e.touches[0].clientY + 'px';
+        }
+      });
+
+      window.addEventListener('scroll', () => {
+        scrollY = window.pageYOffset || document.documentElement.scrollTop;
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        const time = Date.now() * 0.001;
+        
+        triangles.forEach((mesh) => {
+          mesh.rotation.x += mesh.userData.rotationSpeed;
+          mesh.rotation.y += mesh.userData.rotationSpeed;
+          
+          // Enhanced Parallax
+          const targetX = (Math.cos(time + mesh.userData.floatOffset) * 0.5) + (mouseX * mesh.userData.parallaxFactor);
+          const targetY = (Math.sin(time + mesh.userData.floatOffset) * 0.8) - (mouseY * mesh.userData.parallaxFactor);
+          
+          mesh.position.x += (targetX - mesh.position.x) * 0.02;
+          mesh.position.y += (targetY - mesh.position.y) * 0.02;
+        });
+        
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+      animate();
+    })();
+    </script>
+</div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/40 backdrop-blur-3xl border-b border-white/10 shadow-2xl flex items-center justify-between px-container-padding h-20">
+<div class="data-stream opacity-30" style="top: 10%;"></div>
+<div class="flex items-center gap-4 relative z-10">
+<div class="flex items-center justify-center w-12 h-12 rounded-xl overflow-hidden hyper-glass scale-95 active:scale-90 transition-all p-1">
+<img alt="NoTrace Logo" class="w-full h-full object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLusYQuV0dWqOKXTy5MD5aoPY-HxpuzdzGSynPYOdvySvpnwKq_e1lIHrKb7qbIpARfDPNVBio_dce46gMt2wHRaefV9wwwsLl0vxkiozXPkqtnlqxnBD_u4crvPSbL7ULjxpNytOHBH4vakxmMz8nCtPQGUoC00Ab1h42rlCQUqiFS8DLI1BMfrx19ZS4vDxODALS-JKNClW1KgI0wk3j5pDocevgOBMAFzJQkk3zdZtY8_G5BJs4wTBBw"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md header-max-weight tracking-tighter text-primary drop-shadow-[0_0_15px_rgba(210,187,255,0.7)]">#the-void</h1>
+<div class="flex items-center gap-1.5 mt-0.5">
+<div class="w-2 h-2 rounded-full bg-secondary active-encryption-pulse"></div>
+<span class="text-[10px] font-label-sm uppercase tracking-widest text-secondary encryption-status-glow font-bold">Active Encryption</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 relative z-10">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-all text-on-surface-variant active:scale-90">
+<span class="material-symbols-outlined text-[24px]" data-icon="search">search</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition-all text-on-surface-variant active:scale-90">
+<span class="material-symbols-outlined text-[24px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="relative h-screen flex flex-col pt-20 pb-32 z-10">
+<!-- Chat Area -->
+<div class="flex-1 overflow-y-auto px-container-padding py-10 space-y-10 custom-scrollbar">
+<!-- Message Received -->
+<div class="flex flex-col items-start gap-2 max-w-[88%] md:max-w-[65%]">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-7 h-7 rounded-full overflow-hidden border border-white/20 shadow-lg">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAy1KusV9JJkPSMLNTvRYubK5y7zQIJHlFoVAYqiTxQl3ZcS_jWFikq3ZnxNKg6MJ_Lcv5OQTKrJo1Hdr_3vsh4JaYf5n5l6ELEtlTSYat_PCjVsAGx2WtX0t4XLfcntX0w2Mu0nQKgAYEgEvGUKAluZb8b3wJhrwMsDb75VWfTnIsIGzVW2KNgMQvNwz4EySSnkQDpUcgU4ePiCVYGxr851LwraqlGId-7XBcetoRXi-ojhNCr6J3JdBv_t1CHAhg20llsA1ObM2U"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold">System_Admin</span>
+<span class="text-[11px] text-outline opacity-70">14:02</span>
+</div>
+<div class="received-bubble p-5 rounded-3xl font-body-md text-body-md text-on-surface leading-relaxed relative overflow-hidden">
+<div class="data-stream opacity-10" style="animation-delay: 1s;"></div>
+                Welcome to #the-void. All communications in this channel are ephemeral and end-to-end encrypted using our proprietary zero-knowledge protocol.
+            </div>
+</div>
+<!-- Message Sent -->
+<div class="flex flex-col items-end gap-2 ml-auto max-w-[88%] md:max-w-[65%]">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[11px] text-outline opacity-70">14:05</span>
+<span class="font-label-sm text-label-sm text-primary drop-shadow-[0_0_8px_rgba(210,187,255,0.4)] font-bold">You</span>
+</div>
+<div class="sent-bubble p-5 rounded-3xl font-body-md text-body-md text-on-primary-container leading-relaxed relative overflow-hidden shadow-xl">
+<div class="data-stream opacity-20"></div>
+                Acknowledged. Are the assets for the Neo-Tokyo operation ready for deployment?
+            </div>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[16px] text-secondary" style="font-variation-settings: 'FILL' 1;">done_all</span>
+<span class="text-[10px] font-label-sm text-secondary uppercase tracking-wider encryption-status-glow font-black">Verified</span>
+</div>
+</div>
+<!-- Message Received with File -->
+<div class="flex flex-col items-start gap-2 max-w-[88%] md:max-w-[65%]">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-7 h-7 rounded-full overflow-hidden border border-white/20 shadow-lg">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAen7-6RKVwKgu6_nc_FjTWVMsoySrk0r6f05XQ2849MnbQeeDG-dWSGUskLYaHFONB3_GZeWOQ5hYv76ApfdyQCNgKdrajtaP8-suuLdz0P-p-ay6DClKK6-jluM8PeTxm6zey-j6Iltdp_MajEpwAqK-i8vseHMjp3gUjub3susUzd6x2zxnG1ZiQ7LExvSW-9nXvF2ox80Ub3FWcS1uR5vR7EjDz41UIihH8tPzZJkpuUYzKqeToXimTTpAX4ttzCCWpyLAg9TU"/>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-bold">Operator_01</span>
+<span class="text-[11px] text-outline opacity-70">14:06</span>
+</div>
+<div class="received-bubble p-5 rounded-3xl font-body-md text-body-md text-on-surface leading-relaxed">
+                Uploading encrypted manifest now. Expect a secure handshake in T-minus 5 minutes.
+            </div>
+<!-- File Attachment Hyper-Glass -->
+<div class="mt-3 hyper-glass p-4 rounded-2xl flex items-center gap-4 w-full border-secondary/30 relative overflow-hidden group active:scale-95 transition-transform">
+<div class="data-stream opacity-10 group-hover:opacity-40 transition-opacity" style="animation-duration: 2s;"></div>
+<div class="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary shadow-lg">
+<span class="material-symbols-outlined text-[28px]" data-icon="inventory_2">inventory_2</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-md text-label-md font-black truncate text-primary-fixed">manifest_delta_9.nt</p>
+<p class="text-[11px] text-outline font-bold mt-0.5">2.4 MB • Encrypted</p>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-primary transition-all active:scale-90">
+<span class="material-symbols-outlined text-[24px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Final Sent Message -->
+<div class="flex flex-col items-end gap-2 ml-auto max-w-[88%] md:max-w-[65%]">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[11px] text-outline opacity-70">14:08</span>
+<span class="font-label-sm text-label-sm text-primary drop-shadow-[0_0_8px_rgba(210,187,255,0.4)] font-bold">You</span>
+</div>
+<div class="sent-bubble p-5 rounded-3xl font-body-md text-body-md text-on-primary-container shadow-2xl relative overflow-hidden">
+<div class="absolute inset-0 bg-white/5 pointer-events-none"></div>
+                Standing by for decryption key. Ensure the vault is primed.
+            </div>
+</div>
+</div>
+<!-- Floating Input Area -->
+<div class="fixed bottom-24 left-0 w-full px-container-padding z-40">
+<div class="max-w-4xl mx-auto hyper-glass p-2.5 rounded-3xl flex items-end gap-3 shadow-[0_15px_50px_rgba(0,0,0,0.7)] border-white/15 relative overflow-hidden">
+<div class="data-stream opacity-10" style="bottom: 0; animation-direction: reverse;"></div>
+<button class="w-12 h-12 flex items-center justify-center rounded-2xl text-on-surface-variant hover:bg-white/10 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[28px]" data-icon="add_circle">add_circle</span>
+</button>
+<div class="flex-1 relative pb-1">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-body-md py-3 custom-scrollbar resize-none text-on-surface placeholder:text-outline/40 font-body-md leading-normal" placeholder="Secure transmission..." rows="1"></textarea>
+</div>
+<button class="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(139,74,255,0.5)] hover:shadow-[0_0_30px_rgba(139,74,255,0.8)] hover:scale-105 active:scale-90 transition-all">
+<span class="material-symbols-outlined filter drop-shadow-[0_0_10px_white] text-[24px]" data-icon="send" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface-container-lowest/50 backdrop-blur-3xl border-t border-white/10 shadow-[0_-20px_40px_rgba(0,0,0,0.8)] flex justify-around items-center h-24 px-6">
+<div class="data-stream opacity-20" style="top: 0;"></div>
+<!-- Channels (Active) -->
+<a class="flex flex-col items-center justify-center text-primary filter drop-shadow-[0_0_12px_rgba(210,187,255,0.9)] active:scale-95 transition-all group" href="#">
+<span class="material-symbols-outlined mb-1.5 text-[28px]" data-icon="hub" style="font-variation-settings: 'FILL' 1;">hub</span>
+<span class="font-label-sm text-label-sm font-black tracking-widest uppercase">Channels</span>
+</a>
+<!-- Secure -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/40 hover:text-primary/70 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined mb-1.5 text-[28px]" data-icon="shield_lock">shield_lock</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">Secure</span>
+</a>
+<!-- Vault -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/40 hover:text-primary/70 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined mb-1.5 text-[28px]" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">Vault</span>
+</a>
+<!-- Settings -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant/40 hover:text-primary/70 transition-all active:scale-95 group" href="#">
+<span class="material-symbols-outlined mb-1.5 text-[28px]" data-icon="settings">settings_cell</span>
+<span class="font-label-sm text-label-sm font-bold uppercase">System</span>
+</a>
+</nav>
+<script>
+    // Auto-expand textarea
+    const tx = document.getElementsByTagName("textarea");
+    for (let i = 0; i < tx.length; i++) {
+      tx[i].setAttribute("style", "height:" + (tx[i].scrollHeight) + "px;overflow-y:hidden;");
+      tx[i].addEventListener("input", OnInput, false);
+    }
+
+    function OnInput() {
+      this.style.height = 0;
+      this.style.height = (this.scrollHeight) + "px";
+    }
+
+    // Interactive glow behavior
+    const glow = document.getElementById('cursor-glow');
+    document.addEventListener('mousemove', (e) => {
+        glow.style.left = e.clientX + 'px';
+        glow.style.top = e.clientY + 'px';
+        glow.style.opacity = '1';
+    });
+    
+    document.addEventListener('touchstart', (e) => {
+        glow.style.opacity = '1';
+    });
+
+    // Auto-scroll to bottom
+    window.onload = () => {
+        const chatArea = document.querySelector('.overflow-y-auto');
+        chatArea.scrollTop = chatArea.scrollHeight;
+    };
+</script>
+</body></html>

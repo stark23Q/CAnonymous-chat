@@ -1,0 +1,17 @@
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const requests = await prisma.joinRequest.findMany({
+    include: {
+      group: true,
+      invitation: true
+    }
+  });
+  console.log(JSON.stringify(requests, null, 2));
+}
+
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
