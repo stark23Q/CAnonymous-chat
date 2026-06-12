@@ -149,6 +149,7 @@ export function NoTraceApp() {
 
   // Rename Dialogs
   const [channelDialog, setChannelDialog] = useState<{ open: boolean; mode: "CREATE" | "RENAME"; channelId?: string; name: string }>({ open: false, mode: "CREATE", name: "" });
+  const [groupRenameDialog, setGroupRenameDialog] = useState<{ open: boolean; groupId: string; name: string }>({ open: false, groupId: "", name: "" });
 
   const { socket, connected } = useSocket(accessToken);
   const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
@@ -709,18 +710,19 @@ export function NoTraceApp() {
     }
   };
 
-  const updateGroupName = async (newName: string) => {
-    if (!accessToken || !user || !selectedCommunityId) return;
+  const updateGroupName = async (newName: string, targetGroupId?: string) => {
+    const idToUpdate = targetGroupId || selectedCommunityId;
+    if (!accessToken || !user || !idToUpdate) return;
     try {
       await apiFetch(
-        `/api/admin/groups/${selectedCommunityId}/settings`,
+        `/api/admin/groups/${idToUpdate}/settings`,
         {
           method: "PATCH",
           headers: { Authorization: `Bearer ${accessToken}` },
           body: JSON.stringify({ name: newName })
         }
       );
-      setCommunities(prev => prev.map(c => c.id === selectedCommunityId ? { ...c, name: newName } : c));
+      setCommunities(prev => prev.map(c => c.id === idToUpdate ? { ...c, name: newName } : c));
       setNotice("The group name has been updated.");
     } catch (err) {
       setNotice("Could not rename group.");
@@ -819,6 +821,18 @@ export function NoTraceApp() {
                   <button
                     type="button"
                     onClick={() => selectCommunity(community)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (community.id === "DM" || community.id.startsWith("dm_")) {
+                        setNotice("Cannot rename DM groups.");
+                        return;
+                      }
+                      if (user?.role === "ADMIN" || community.createdById === user?.id) {
+                        setGroupRenameDialog({ open: true, groupId: community.id, name: community.name });
+                      } else {
+                        setNotice("Only admins can rename this group.");
+                      }
+                    }}
                     className={cn(
                       "grid h-11 w-11 place-items-center rounded-xl border text-sm font-black transition-all hover:scale-105",
                       community.id === selectedCommunityId
@@ -1138,6 +1152,36 @@ export function NoTraceApp() {
               <Button type="submit" disabled={!channelDialog.name.trim()}>
                 {channelDialog.mode === "CREATE" ? "Create Channel" : "Save Changes"}
               </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Group Rename Dialog */}
+      <Dialog open={groupRenameDialog.open} onOpenChange={(open) => setGroupRenameDialog(prev => ({ ...prev, open }))}>
+        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle>Rename Group</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            const trimmed = groupRenameDialog.name.trim();
+            if (trimmed) {
+              await updateGroupName(trimmed, groupRenameDialog.groupId);
+              setGroupRenameDialog({ open: false, groupId: "", name: "" });
+            }
+          }} className="flex flex-col gap-4 mt-4">
+            <Input
+              placeholder="Enter new group name"
+              value={groupRenameDialog.name}
+              onChange={(e) => setGroupRenameDialog(prev => ({ ...prev, name: e.target.value }))}
+              className="bg-black/50 border-white/10"
+              maxLength={80}
+              autoFocus
+            />
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setGroupRenameDialog(prev => ({ ...prev, open: false }))}>Cancel</Button>
+              <Button type="submit" disabled={!groupRenameDialog.name.trim()}>Save Changes</Button>
             </DialogFooter>
           </form>
         </DialogContent>
