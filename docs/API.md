@@ -1,74 +1,68 @@
-# NoTrace API
+# API Reference
 
-Base URL: `http://localhost:4000`
+The NoTrace backend provides both a REST API and a Real-time WebSocket API.
+
+Base URL (Local): `http://localhost:4000/api`
+Base URL (Prod): `https://your-api-domain.com/api`
 
 ## Authentication
 
-- `GET /api/auth/csrf` issues a CSRF token.
-- `POST /api/auth/join/request` submits an invite-code-based join request.
-- `POST /api/auth/join/claim` exchanges an approved one-time join token for an anonymous account.
-- `POST /api/auth/refresh` rotates/refreshes access cookies.
-- `POST /api/auth/logout` revokes the current session.
-- `GET /api/auth/me` returns the current anonymous user and approved memberships.
-- `POST /api/auth/magic-links` creates a magic link for the current user.
-- `POST /api/auth/magic-login` signs in with a one-time magic token.
+Authentication is handled via HTTP-only cookies containing JWTs (JSON Web Tokens).
 
-JWT access tokens are short-lived. Refresh sessions are stored server-side with hashed refresh tokens.
+### `POST /api/auth/anonymous-session`
+Creates a new anonymous session.
+- **Response:** `200 OK` (Sets `access_token` and `refresh_token` cookies)
 
-## Admin
+### `POST /api/auth/refresh`
+Refreshes an expired access token using the refresh token cookie.
 
-- `POST /api/admin/groups` creates a community with default channels.
-- `PATCH /api/admin/groups/:groupId/settings` updates privacy, retention, read receipts, typing, and E2EE flags.
-- `POST /api/admin/groups/:groupId/invitations` creates an invite code.
-- `GET /api/admin/join-requests` lists join requests.
-- `POST /api/admin/join-requests/:requestId/approve` creates a one-time claim token.
-- `POST /api/admin/join-requests/:requestId/reject` rejects a request.
-- `GET /api/admin/groups/:groupId/members` lists anonymous members.
-- `POST /api/admin/memberships/:membershipId/ban` bans a member.
-- `POST /api/admin/memberships/:membershipId/remove` removes a member.
-- `GET /api/admin/reports` lists reported content.
-- `PATCH /api/admin/reports/:reportId` reviews, dismisses, or actions a report.
+---
 
-## Groups And Messages
+## Groups & Identity
 
-- `GET /api/groups` lists visible communities.
-- `GET /api/groups/:groupId` returns one community and channels.
-- `GET /api/groups/:groupId/channels/:channelId/messages` returns message history.
-- `POST /api/messages` creates a text or media message.
-- `DELETE /api/messages/:messageId` deletes a member's own message or an admin-moderated message.
-- `POST /api/messages/:messageId/reactions` toggles a reaction.
-- `POST /api/messages/:messageId/reports` reports abusive content.
-- `POST /api/messages/media/presign` creates a presigned media upload URL.
+### `POST /api/groups`
+Creates a new anonymous group.
+- **Body:** `{ name: "Group Name", isPrivate: true }`
+- **Response:** `{ id: "group_id", inviteCode: "12345" }`
 
-## Extras
+### `POST /api/groups/:inviteCode/join`
+Joins a group using an invite code. The server will randomly generate a pseudonymous identity (e.g., "Neon Fox") for the user specifically for this group.
+- **Response:** `{ groupId: "group_id", persona: { name: "Neon Fox", avatarId: "fox" } }`
 
-- `POST /api/groups/:groupId/channels/:channelId/polls` creates an anonymous poll.
-- `GET /api/groups/:groupId/polls` lists polls.
-- `POST /api/groups/polls/:pollId/votes` votes anonymously.
-- `POST /api/groups/:groupId/confessions` creates a confession.
-- `GET /api/groups/:groupId/confessions` lists confessions.
-- `POST /api/groups/:groupId/questions` creates an anonymous question.
-- `GET /api/groups/:groupId/questions` lists Q&A items.
+### `GET /api/groups`
+Retrieves all groups the current user is a member of.
 
-## Socket.IO Events
+---
 
-Client emits:
+## Messages
 
-- `group:join`
-- `channel:join`
-- `message:send`
-- `message:delete`
-- `reaction:toggle`
-- `typing:start`
-- `typing:stop`
-- `message:read`
+*Note: In production, sending messages is primarily handled via Socket.IO for lower latency, but REST fallbacks exist.*
 
-Server emits:
+### `GET /api/messages/:groupId`
+Retrieves message history for a group.
+- **Query Params:** `cursor` (for pagination), `limit`
+- **Response:** `[ { id: "msg_1", content: "Hello", persona: { name: "Neon Fox" }, createdAt: "..." } ]`
 
-- `message:new`
-- `message:deleted`
-- `reaction:updated`
-- `typing:update`
-- `message:receipt`
+---
 
-Read receipts are ignored when the group setting disables them.
+## Real-time API (Socket.IO)
+
+Clients connect to the Socket.IO server at the base URL. Authentication is passed via the `auth` payload during connection.
+
+### Client-to-Server Events
+
+- `join_group`: `{ groupId: string }`
+  - Subscribes the client to events for a specific group.
+- `send_message`: `{ groupId: string, content: string, type: "text" | "confession" | "poll" }`
+  - Dispatches a new message to the group.
+- `typing_start`: `{ groupId: string }`
+- `typing_stop`: `{ groupId: string }`
+
+### Server-to-Client Events
+
+- `new_message`: `{ id, content, persona, type, createdAt }`
+  - Broadcast to all users in a group when a message is sent.
+- `user_typing`: `{ personaName: string }`
+  - Broadcast when someone is typing.
+- `message_deleted`: `{ messageId: string }`
+  - Broadcast when an admin deletes a message or an ephemeral message expires.

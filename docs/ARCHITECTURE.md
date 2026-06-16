@@ -1,58 +1,80 @@
-# NoTrace Architecture
+# Architecture Overview
 
-NoTrace is an invite-only anonymous community chat platform. The system is split into a Next.js web app and an Express/Socket.IO API, backed by PostgreSQL, Prisma, Redis, and S3-compatible object storage.
+NoTrace is built as a modern full-stack monorepo, separating the frontend web client from the backend API while sharing types where necessary.
 
-## Project Layout
-
-```text
-apps/
-  api/
-    prisma/schema.prisma       Database schema
-    src/index.ts               Express + Socket.IO server entrypoint
-    src/routes/                REST API routes
-    src/realtime.ts            Socket.IO events
-    src/services/              Auth, storage, retention, moderation, messages
-    src/jobs/retention.ts      Expiring-message cleanup
-  web/
-    app/                       Next.js App Router
-    components/                NoTrace chat, admin, and UI components
-    hooks/use-socket.ts        Socket.IO client hook
-    lib/                       API helpers, sample state, types
-docs/
-nginx/
-docker-compose.yml
-```
-
-## Runtime Flow
+## System Diagram
 
 ```mermaid
-flowchart LR
-  Browser["NoTrace Web App"] -->|REST /api| API["Express API"]
-  Browser -->|Socket.IO| Realtime["Socket.IO Server"]
-  API --> Prisma["Prisma ORM"]
-  Realtime --> Prisma
-  Prisma --> Postgres["PostgreSQL"]
-  Realtime <-->|adapter| Redis["Redis"]
-  API --> Storage["Cloudflare R2 / S3"]
-  API --> Moderation["Optional moderation webhook"]
-  Nginx["Nginx"] --> Browser
-  Nginx --> API
+graph TD
+    Client[Web Client\nNext.js + React] --> |REST HTTP| API[API Server\nExpress.js]
+    Client <--> |WebSocket| Realtime[Realtime Server\nSocket.IO]
+    
+    API --> DB[(Database\nPostgreSQL)]
+    API --> Cache[(Redis)]
+    Realtime --> Cache
+    
+    subgraph Backend
+    API
+    Realtime
+    end
 ```
 
-## Privacy Model
+## Repository Structure
 
-NoTrace does not model real names, email addresses, phone numbers, IP addresses, or device identifiers as user-facing identity. Members receive random anonymous names and avatar seeds. Membership aliases are group-scoped, so the same account can appear differently across communities.
+The project uses a monorepo setup (managed via `pnpm` workspaces):
 
-Join requests and magic links use one-time tokens. Raw invite codes and approval tokens are shown only at creation time; the database stores HMAC hashes.
+- `apps/web/`: The frontend Next.js application.
+- `apps/api/`: The backend Express + Socket.IO server.
 
-## Scalability Model
+---
 
-- Socket.IO is ready for horizontal scale through the Redis adapter.
-- Message history and moderation data live in PostgreSQL with indexed group/channel/time queries.
-- Media uploads use presigned S3-compatible URLs so API instances do not proxy large files.
-- Nginx forwards WebSocket upgrades and strips forwarded IP exposure from upstream headers by default.
-- Expiring messages are swept by a background job; in large deployments, run that job as one worker instance or convert it to a scheduled task.
+## Backend (`apps/api`)
 
-## E2EE Roadmap
+The backend is a Node.js application using Express for REST endpoints and Socket.IO for real-time bidirectional communication.
 
-The schema includes `publicKey` and group `e2eeMode` flags. A production E2EE mode should add device keys, per-channel symmetric keys, sender-key rotation, encrypted message payloads, and verified key fingerprints. Until that is implemented, NoTrace should be described as privacy-preserving, not end-to-end encrypted.
+### Core Technologies
+- **Express.js**: Handles standard HTTP requests (authentication, creating groups, fetching message history).
+- **Socket.IO**: Handles real-time events (new messages, typing indicators, presence).
+- **Prisma**: The Object-Relational Mapper (ORM) used to interact with PostgreSQL.
+- **PostgreSQL**: The primary database storing groups, users, and persistent messages.
+- **Redis**: Used for two purposes:
+  1. **Socket.IO Adapter**: Allows scaling the backend horizontally across multiple nodes while keeping WebSocket channels synchronized.
+  2. **Rate Limiting / Caching**: Fast ephemeral storage for API limits.
+
+### Directory Structure
+- `src/routes/`: Express route handlers (REST API).
+- `src/services/`: Core business logic (database queries, auth token generation).
+- `src/realtime.ts`: Socket.IO event handlers and middleware.
+- `prisma/`: Database schema and migration files.
+
+---
+
+## Frontend (`apps/web`)
+
+The frontend is a React application built on the Next.js App Router.
+
+### Core Technologies
+- **Next.js (App Router)**: React framework for routing, layout, and rendering.
+- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Radix UI / shadcn-style**: Unstyled, accessible UI components.
+- **Zustand / React Context**: State management for active chats and identities.
+- **PWA**: Configured as a Progressive Web App (manifest, service worker) for mobile installation.
+
+### Directory Structure
+- `app/`: Next.js file-based routing (`/` home, `/join` invite link handler).
+- `components/`: Reusable UI components.
+  - `chat/`: Messaging UI, input composers, ephemeral views.
+  - `dashboard/`: Admin and group management panels.
+  - `ui/`: Shared primitive components (buttons, dialogs, inputs).
+- `public/`: Static assets, PWA icons, and manifest.
+
+---
+
+## Data Flow: Sending a Message
+
+1. **User types a message** in the `apps/web` client.
+2. The client emits a `send_message` event via **Socket.IO**.
+3. The `apps/api` server receives the event, validates the user's session token, and checks if they belong to the target group.
+4. The API saves the message to **PostgreSQL** via Prisma.
+5. The API broadcasts the `new_message` event to the specific Socket.IO room (representing the group).
+6. All connected clients in that group receive the event and update their UI instantly.

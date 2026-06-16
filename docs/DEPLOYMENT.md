@@ -1,80 +1,58 @@
-# NoTrace Deployment Guide
+# Deployment Guide
 
-## Local Development
+NoTrace uses a split deployment model for production: the frontend is deployed to edge networks (like Vercel), and the backend (API, Database, Redis) is deployed to containerized platforms (like Railway).
 
-1. Copy `.env.example` to `.env`.
-2. Replace all secrets with random 32-byte-or-longer values.
-3. Install dependencies:
-   ```powershell
-   corepack pnpm install
-   ```
-4. Generate Prisma client:
-   ```powershell
-   corepack pnpm db:generate
-   ```
-5. Start PostgreSQL and Redis:
-   ```powershell
-   docker compose up -d postgres redis
-   ```
-6. Run migrations and seed data:
-   ```powershell
-   corepack pnpm db:migrate
-   corepack pnpm db:seed
-   ```
-7. Start the apps:
-   ```powershell
-   corepack pnpm dev
-   ```
+## 1. Backend Deployment (Railway)
 
-Demo invite code from the seed script: `NOTRACE-DEMO`.
+We recommend [Railway.app](https://railway.app) for the backend because it natively supports PostgreSQL, Redis, and Node.js in a single project network.
 
-## Docker Compose
+### Steps
+1. Create a new Railway Project.
+2. Add a **PostgreSQL** database.
+3. Add a **Redis** instance.
+4. Link your GitHub repository. Railway will detect the monorepo.
+5. In the Railway settings for the API service:
+   - **Root Directory:** `/`
+   - **Build Command:** `pnpm run db:generate && pnpm --filter @anonymous-chat/api build`
+   - **Start Command:** `pnpm --filter @anonymous-chat/api start`
 
-`docker-compose.yml` includes:
-
-- `postgres`
-- `redis`
-- `api`
-- `web`
-- `nginx`
-
-Run:
-
-```powershell
-docker compose up --build
+### Environment Variables (Backend)
+Set these in your Railway API service variables:
+```env
+NODE_ENV=production
+PORT=4000
+DATABASE_URL=postgresql://... # Copy from Railway Postgres
+REDIS_URL=redis://...          # Copy from Railway Redis
+JWT_ACCESS_SECRET=generate_a_long_random_string
+JWT_REFRESH_SECRET=generate_another_random_string
+COOKIE_SECRET=generate_a_third_random_string
+FRONTEND_URL=https://notrace.vercel.app # Your frontend URL
 ```
 
-The Nginx entrypoint is `http://localhost:8080`.
+## 2. Frontend Deployment (Vercel)
 
-## Production VPS
+The Next.js frontend is best deployed on [Vercel](https://vercel.com).
 
-1. Point DNS to the VPS.
-2. Install Docker and Docker Compose.
-3. Create `.env` with production values.
-4. Use TLS termination through Nginx, Caddy, Traefik, or your cloud load balancer.
-5. Set `APP_ORIGIN`, `API_PUBLIC_URL`, `NEXT_PUBLIC_API_URL`, and `NEXT_PUBLIC_SOCKET_URL` to HTTPS URLs.
-6. Configure Cloudflare R2 or AWS S3 credentials.
-7. Run:
-   ```bash
-   docker compose up -d --build
-   docker compose exec api corepack pnpm prisma migrate deploy
-   ```
+### Steps
+1. Go to Vercel and import your GitHub repository.
+2. In the project settings, set:
+   - **Framework Preset:** Next.js
+   - **Root Directory:** `apps/web`
+3. Add Environment Variables:
+```env
+NEXT_PUBLIC_API_URL=https://your-api-domain.up.railway.app
+```
+4. Click Deploy.
 
-## Storage
+## 3. PWA (Google Play Store via TWA)
 
-NoTrace expects S3-compatible storage. Cloudflare R2 is a good fit because egress pricing is friendly for media-heavy communities. Configure:
+NoTrace is fully configured as a Progressive Web App (PWA). To deploy it to the Google Play Store:
 
-- `S3_ENDPOINT`
-- `S3_REGION`
-- `S3_BUCKET`
-- `S3_ACCESS_KEY_ID`
-- `S3_SECRET_ACCESS_KEY`
-- `S3_PUBLIC_BASE_URL`
-
-## Backups
-
-- PostgreSQL: encrypted daily dumps plus point-in-time recovery when available.
-- Object storage: lifecycle rules and versioning for abuse investigations.
-- Redis: not required for long-term backups; it is realtime coordination state.
-
-Do not restore backups into shared staging systems unless secrets and token hashes remain protected.
+1. Ensure the Vercel web app is live.
+2. Go to [PWABuilder.com](https://pwabuilder.com).
+3. Enter your Vercel URL.
+4. Generate the Android App Bundle (AAB).
+5. Extract the SHA256 fingerprint from the generated package.
+6. Update `apps/web/public/.well-known/assetlinks.json` in your codebase with the fingerprint.
+7. Commit, push, and wait for Vercel to redeploy.
+8. Upload the AAB to the Google Play Console.
