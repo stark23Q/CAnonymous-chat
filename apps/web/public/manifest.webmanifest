@@ -66,8 +66,8 @@
   "screenshots": [
     {
       "src": "/splash.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "NoTrace splash screen"
     }
