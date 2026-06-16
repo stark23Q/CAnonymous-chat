@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Outfit } from "next/font/google";
 import { ThreeJsBackground } from "@/components/threejs-background";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -10,11 +11,45 @@ const outfit = Outfit({
   display: "swap"
 });
 
+const APP_NAME = "NoTrace";
+const APP_DESCRIPTION = "Invite-only anonymous community chat. Speak freely. Leave no trace.";
+
 export const metadata: Metadata = {
-  title: "NoTrace 🎭",
-  description: "Invite-only anonymous community chat.",
+  applicationName: APP_NAME,
+  title: {
+    default: "NoTrace 🎭",
+    template: "%s | NoTrace"
+  },
+  description: APP_DESCRIPTION,
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: APP_NAME
+  },
+  formatDetection: {
+    telephone: false
+  },
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: "NoTrace 🎭",
+    description: APP_DESCRIPTION
+  },
+  twitter: {
+    card: "summary",
+    title: "NoTrace 🎭",
+    description: APP_DESCRIPTION
+  },
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%238B4AFF"/><stop offset="100%" stop-color="%23009FE2"/></linearGradient></defs><path d="M20 40 C20 30 35 25 50 25 C65 25 80 30 80 40 C80 55 75 70 50 78 C25 70 20 55 20 40 Z" fill="black" stroke="url(%23g)" stroke-width="6"/><path d="M32 42 C36 38 44 38 46 44 C42 45 35 45 32 42 Z" fill="url(%23g)"/><path d="M68 42 C64 38 56 38 54 44 C58 45 65 45 68 42 Z" fill="url(%23g)"/><path d="M25 52 C28 55 35 55 38 52" stroke="url(%23g)" stroke-width="3" fill="none"/><path d="M75 52 C72 55 65 55 62 52" stroke="url(%23g)" stroke-width="3" fill="none"/><path d="M44 62 Q50 66 56 62" stroke="url(%23g)" stroke-width="4" fill="none" stroke-linecap="round"/></svg>'
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: [
+      { url: "/icons/icon-152.png", sizes: "152x152", type: "image/png" }
+    ],
+    shortcut: "/icons/icon-192.png"
   }
 };
 
@@ -22,15 +57,40 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  colorScheme: "dark"
+  userScalable: false,
+  colorScheme: "dark",
+  themeColor: "#8B4AFF"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en" className={`dark ${outfit.variable}`}>
+      <head>
+        {/* PWA service worker registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(reg) { console.log('[SW] Registered', reg.scope); })
+                    .catch(function(err) { console.warn('[SW] Failed:', err); });
+                });
+              }
+            `
+          }}
+        />
+        {/* iOS PWA splash screens */}
+        <link rel="apple-touch-startup-image" href="/splash.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="NoTrace" />
+      </head>
       <body className="font-sans antialiased text-foreground bg-background overflow-hidden relative">
         <ThreeJsBackground />
         <div className="relative z-10">{children}</div>
+        <PwaInstallPrompt />
       </body>
     </html>
   );
