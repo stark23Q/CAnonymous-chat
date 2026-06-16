@@ -63,6 +63,8 @@ export function authRoutes(): Router {
         return;
       }
 
+      const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
+
       const user = await prisma.user.findFirst({
         where: { role: UserRole.ADMIN },
         orderBy: { createdAt: "asc" }
@@ -73,7 +75,12 @@ export function authRoutes(): Router {
         return;
       }
 
-      const tokens = await createSession(user);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastIp: ipAddress }
+      });
+
+      const tokens = await createSession(user, ipAddress);
       setAuthCookies(res, tokens);
 
       res.status(201).json({
@@ -232,6 +239,7 @@ export function authRoutes(): Router {
       }
 
       const recoveryPhrase = createOpaqueToken("rcv");
+      const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
 
       const user = await prisma.$transaction(async (tx) => {
         const createdUser = await tx.user.create({
@@ -239,6 +247,7 @@ export function authRoutes(): Router {
             anonymousName: finalUserName,
             avatarSeed: userIdentity.avatarSeed,
             recoveryKeyHash: hashToken(recoveryPhrase),
+            lastIp: ipAddress,
             memberships: {
               create: {
                 groupId,
@@ -268,7 +277,7 @@ export function authRoutes(): Router {
         return createdUser;
       });
 
-      const tokens = await createSession(user);
+      const tokens = await createSession(user, ipAddress);
       setAuthCookies(res, tokens);
 
       res.status(201).json({
@@ -299,7 +308,13 @@ export function authRoutes(): Router {
         return;
       }
 
-      const tokens = await createSession(user);
+      const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastIp: ipAddress }
+      });
+
+      const tokens = await createSession(user, ipAddress);
       setAuthCookies(res, tokens);
 
       res.status(201).json({
@@ -348,6 +363,12 @@ export function authRoutes(): Router {
         res.status(401).json({ error: "Refresh token is invalid or expired." });
         return;
       }
+
+      const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
+      await prisma.user.update({
+        where: { id: session.userId },
+        data: { lastIp: ipAddress }
+      });
 
       const accessToken = signAccessToken({
         sub: session.userId,
@@ -484,7 +505,13 @@ export function authRoutes(): Router {
         data: { usedAt: new Date() }
       });
 
-      const tokens = await createSession(user);
+      const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastIp: ipAddress }
+      });
+
+      const tokens = await createSession(user, ipAddress);
       setAuthCookies(res, tokens);
 
       res.json({

@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Ban, Check, Copy, Database, Flag, HardDrive, LockKeyhole, ShieldAlert, UserMinus, UserPlus, X } from "lucide-react";
-import type { Community, JoinRequest, Member } from "@/lib/types";
+import { Ban, Check, Copy, Database, Flag, HardDrive, LockKeyhole, ShieldAlert, UserMinus, UserPlus, Users, X } from "lucide-react";
+import type { AdminUser, Community, JoinRequest, Member } from "@/lib/types";
 import { AnonymousAvatar } from "@/components/anonymous-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,9 @@ export function AdminPanel({
   latestInvite,
   busyRequestId,
   reports,
-  onReviewReport
+  onReviewReport,
+  adminUsers,
+  onLoadAdminUsers
 }: {
   community: Community;
   requests: JoinRequest[];
@@ -56,6 +58,8 @@ export function AdminPanel({
   busyRequestId: string | null;
   reports: AdminReport[];
   onReviewReport: (reportId: string, action: "DISMISSED" | "ACTIONED") => void;
+  adminUsers?: AdminUser[] | null;
+  onLoadAdminUsers?: () => void;
 }) {
   const openReports = reports.filter((r) => r.status === "OPEN");
 
@@ -74,11 +78,12 @@ export function AdminPanel({
 
         <Tabs defaultValue="queue" className="flex min-h-0 flex-1 flex-col">
           <div className="border-b border-white/5 px-4 py-3">
-            <TabsList className="grid w-full grid-cols-4 bg-black/40 border border-white/5">
-              <TabsTrigger value="queue">Queue</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="members">Members</TabsTrigger>
-              <TabsTrigger value="reports" className="relative">
+            <TabsList className="grid w-full grid-cols-5 bg-black/40 border border-white/5 h-10 px-1 text-xs">
+              <TabsTrigger value="queue" className="text-[10px]">Queue</TabsTrigger>
+              <TabsTrigger value="settings" className="text-[10px]">Settings</TabsTrigger>
+              <TabsTrigger value="members" className="text-[10px]">Members</TabsTrigger>
+              <TabsTrigger value="users" className="text-[10px]" onClick={() => onLoadAdminUsers?.()}>Users</TabsTrigger>
+              <TabsTrigger value="reports" className="relative text-[10px]">
                 Reports
                 {openReports.length > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
@@ -328,6 +333,63 @@ export function AdminPanel({
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          {/* ── USERS TAB (Global Admin) ── */}
+          <TabsContent value="users" className="scrollbar-thin m-0 flex-1 overflow-y-auto px-4 py-4">
+            <div className="space-y-4">
+              {!adminUsers ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">Loading users...</div>
+              ) : adminUsers.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">No users found.</div>
+              ) : (
+                adminUsers.map((u) => (
+                  <div key={u.id} className="rounded-xl border border-white/10 bg-black/40 p-3 space-y-3 relative overflow-hidden group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold font-mono text-primary truncate max-w-[150px]" title={u.id}>
+                          {u.id.substring(0, 10)}...
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">Joined: {new Date(u.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      {u.role === "ADMIN" && <Badge tone="good">ADMIN</Badge>}
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">Current Base Alias:</span>
+                        <span className="font-semibold">{u.anonymousName}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">Last IP:</span>
+                        <span className="font-mono text-orange-300">{u.lastIp || "Unknown"}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-muted-foreground">Active Sessions:</span>
+                        <span>{u.sessionCount}</span>
+                      </div>
+                    </div>
+
+                    {u.aliases.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/5 space-y-2">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Group Aliases</p>
+                        <div className="space-y-1">
+                          {u.aliases.map((alias) => (
+                            <div key={alias.groupId} className="flex flex-col gap-0.5 rounded bg-white/5 p-1.5">
+                              <span className="text-[10px] font-semibold text-blue-300 truncate">{alias.groupName}</span>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-foreground">{alias.anonymousName}</span>
+                                <span className="text-muted-foreground">{alias.status}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

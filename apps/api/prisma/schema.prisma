@@ -76,6 +76,7 @@ model User {
   recoveryKeyHash String?
   createdAt     DateTime  @default(now())
   lastActiveAt  DateTime?
+  lastIp        String?
 
   createdGroups Group[]        @relation("GroupCreator")
   memberships   Membership[]
@@ -206,6 +207,7 @@ model AuthSession {
   refreshTokenHash String    @unique
   expiresAt        DateTime
   revokedAt        DateTime?
+  ipAddress        String?
   createdAt        DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

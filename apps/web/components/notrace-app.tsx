@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch } from "@/lib/api";
 import { communities as seedCommunities, initialMessages, joinRequests as seedRequests, members as seedMembers } from "@/lib/sample-data";
-import type { Channel, ChatMessage, Community, JoinRequest, Member, NoTraceUser, Poll, Confession, Question } from "@/lib/types";
+import type { Channel, ChatMessage, Community, JoinRequest, Member, NoTraceUser, Poll, Confession, Question, AdminUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/hooks/use-socket";
 import { useRouter } from "next/navigation";
@@ -200,6 +200,7 @@ export function NoTraceApp() {
   const [requests, setRequests] = useState<JoinRequest[]>(seedRequests);
   const [members, setMembers] = useState<Member[]>(seedMembers);
   const [reports, setReports] = useState<AdminReport[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[] | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [typing, setTyping] = useState<string | null>(null);
   const [mobileChannelsOpen, setMobileChannelsOpen] = useState(false);
@@ -345,6 +346,18 @@ export function NoTraceApp() {
     const data = await apiFetch<{ members: ApiMember[] }>(`/api/admin/groups/${groupId}/members`);
     setMembers(data.members.map(toMember));
   }, []);
+
+  const loadAdminUsers = useCallback(async () => {
+    if (user?.role !== "ADMIN") return;
+    try {
+      const data = await apiFetch<{ users: AdminUser[] }>("/api/admin/users", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      setAdminUsers(data.users);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+    }
+  }, [user, accessToken]);
 
   const loadReports = useCallback(async (groupId: string) => {
     try {
@@ -1499,6 +1512,8 @@ export function NoTraceApp() {
                   setNotice(error instanceof Error ? error.message : "Typing indicators update failed.")
                 )
               }
+              adminUsers={adminUsers}
+              onLoadAdminUsers={loadAdminUsers}
               onRetentionChange={(policy) =>
                 void updateGroupSettings({ retentionPolicy: policy }).catch((error) =>
                   setNotice(error instanceof Error ? error.message : "Retention update failed.")

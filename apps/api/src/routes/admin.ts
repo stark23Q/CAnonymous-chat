@@ -583,6 +583,52 @@ export function adminRoutes(): Router {
     }
   });
 
+  router.get("/users", async (req, res, next) => {
+    try {
+      if (req.auth!.role !== UserRole.ADMIN) {
+        res.status(403).json({ error: "Forbidden. Admin access required." });
+        return;
+      }
+
+      const users = await prisma.user.findMany({
+        include: {
+          memberships: {
+            include: {
+              group: {
+                select: { name: true }
+              }
+            }
+          },
+          _count: {
+            select: { sessions: { where: { revokedAt: null } } }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const formatted = users.map(u => ({
+        id: u.id,
+        anonymousName: u.anonymousName,
+        role: u.role,
+        lastIp: u.lastIp,
+        createdAt: u.createdAt,
+        lastActiveAt: u.lastActiveAt,
+        sessionCount: u._count.sessions,
+        aliases: u.memberships.map(m => ({
+          groupId: m.groupId,
+          groupName: m.group.name,
+          anonymousName: m.anonymousName,
+          status: m.status,
+          joinedAt: m.joinedAt
+        }))
+      }));
+
+      res.json({ users: formatted });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 

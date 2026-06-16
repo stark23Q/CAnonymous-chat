@@ -7,7 +7,7 @@ import { prisma } from "../lib/prisma.js";
 const refreshCookie = "notrace_refresh";
 const accessCookie = "notrace_access";
 
-export async function createSession(user: Pick<User, "id" | "role">) {
+export async function createSession(user: Pick<User, "id" | "role">, ipAddress?: string) {
   const placeholder = createOpaqueToken("refresh");
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 30);
@@ -16,7 +16,8 @@ export async function createSession(user: Pick<User, "id" | "role">) {
     data: {
       userId: user.id,
       refreshTokenHash: hashToken(placeholder),
-      expiresAt
+      expiresAt,
+      ipAddress
     }
   });
 

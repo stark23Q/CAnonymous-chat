@@ -5,7 +5,7 @@
     "buildCommand": "pnpm run db:generate && pnpm --filter @anonymous-chat/api build"
   },
   "deploy": {
-    "startCommand": "pnpm run db:deploy || echo 'db:deploy failed, running startup scripts' && pnpm --filter @anonymous-chat/api start",
+    "startCommand": "pnpm --filter @anonymous-chat/api prisma db push --accept-data-loss && pnpm --filter @anonymous-chat/api start",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",

@@ -106,3 +106,20 @@ export type Question = {
   answeredAt: string | null;
   createdAt: string;
 };
+
+export type AdminUser = {
+  id: string;
+  anonymousName: string;
+  role: "ADMIN" | "MEMBER";
+  lastIp: string | null;
+  createdAt: string;
+  lastActiveAt: string | null;
+  sessionCount: number;
+  aliases: {
+    groupId: string;
+    groupName: string;
+    anonymousName: string;
+    status: string;
+    joinedAt: string | null;
+  }[];
+};
