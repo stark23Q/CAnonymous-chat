@@ -599,8 +599,9 @@ export function adminRoutes(): Router {
               }
             }
           },
-          _count: {
-            select: { sessions: { where: { revokedAt: null } } }
+          sessions: {
+            where: { revokedAt: null },
+            select: { id: true }
           }
         },
         orderBy: { createdAt: "desc" }
@@ -613,7 +614,7 @@ export function adminRoutes(): Router {
         lastIp: u.lastIp,
         createdAt: u.createdAt,
         lastActiveAt: u.lastActiveAt,
-        sessionCount: u._count.sessions,
+        sessionCount: u.sessions.length,
         aliases: u.memberships.map(m => ({
           groupId: m.groupId,
           groupName: m.group.name,
