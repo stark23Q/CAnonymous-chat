@@ -77,7 +77,7 @@ export function authRoutes(): Router {
 
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastIp: ipAddress }
+        data: { lastIp: ipAddress ?? null }
       });
 
       const tokens = await createSession(user, ipAddress);
@@ -247,7 +247,7 @@ export function authRoutes(): Router {
             anonymousName: finalUserName,
             avatarSeed: userIdentity.avatarSeed,
             recoveryKeyHash: hashToken(recoveryPhrase),
-            lastIp: ipAddress,
+            lastIp: ipAddress ?? null,
             memberships: {
               create: {
                 groupId,
@@ -311,7 +311,7 @@ export function authRoutes(): Router {
       const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastIp: ipAddress }
+        data: { lastIp: ipAddress ?? null }
       });
 
       const tokens = await createSession(user, ipAddress);
@@ -367,7 +367,7 @@ export function authRoutes(): Router {
       const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
       await prisma.user.update({
         where: { id: session.userId },
-        data: { lastIp: ipAddress }
+        data: { lastIp: ipAddress ?? null }
       });
 
       const accessToken = signAccessToken({
@@ -508,7 +508,7 @@ export function authRoutes(): Router {
       const ipAddress = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() || req.socket.remoteAddress;
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastIp: ipAddress }
+        data: { lastIp: ipAddress ?? null }
       });
 
       const tokens = await createSession(user, ipAddress);
