@@ -50,7 +50,7 @@ export function authRoutes(): Router {
 
   router.post("/dev-session", requireCsrf, async (req, res, next) => {
     try {
-      if (!env.MAGIC_LINK_DEV_MODE) {
+      if (isProduction || !env.MAGIC_LINK_DEV_MODE) {
         res.status(404).json({ error: "Development sessions are disabled." });
         return;
       }

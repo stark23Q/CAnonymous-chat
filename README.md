@@ -9,7 +9,7 @@ Secure, invite-only anonymous community chat with administrator approval, random
 - Data: PostgreSQL, Prisma ORM
 - Realtime scale-out: Redis-backed Socket.IO adapter
 - Storage: S3-compatible API for Cloudflare R2, AWS S3, MinIO, or equivalent
-- Deployment: Docker Compose and Nginx reverse proxy
+- Deployment: Docker Compose and Caddy reverse proxy
 
 ## Quick Start
 

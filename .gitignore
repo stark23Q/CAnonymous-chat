@@ -10,3 +10,9 @@ coverage
 uploads
 tmp
 .DS_Store
+
+# Android App Secrets & Builds
+*.keystore
+signing-key-info.txt
+*.apk
+*.aab
