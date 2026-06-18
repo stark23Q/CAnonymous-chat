@@ -32,6 +32,9 @@ import { communities as seedCommunities, initialMessages, joinRequests as seedRe
 import type { Channel, ChatMessage, Community, JoinRequest, Member, NoTraceUser, Poll, Confession, Question, AdminUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/hooks/use-socket";
+import { useNoTraceSocket } from "@/hooks/use-notrace-socket";
+import { useNoTraceE2EE } from "@/hooks/use-notrace-e2ee";
+import { deriveKey, encryptText } from "@/lib/e2ee";
 import { useRouter } from "next/navigation";
 import { AccessPortal } from "@/components/access-portal";
 
@@ -114,78 +117,7 @@ function toMember(member: ApiMember): Member {
   };
 }
 
-async function deriveKey(passphrase: string, saltString: string): Promise<CryptoKey> {
-  if (typeof window === "undefined") throw new Error("Window is not defined");
-  const encoder = new TextEncoder();
-  const keyMaterial = await window.crypto.subtle.importKey(
-    "raw",
-    encoder.encode(passphrase),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-  const salt = encoder.encode(saltString);
-  return window.crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
 
-async function encryptText(text: string, key: CryptoKey): Promise<string> {
-  if (typeof window === "undefined") throw new Error("Window is not defined");
-  const encoder = new TextEncoder();
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await window.crypto.subtle.encrypt(
-    {
-      name: "AES-GCM",
-      iv: iv
-    },
-    key,
-    encoder.encode(text)
-  );
-  const combined = new Uint8Array(iv.length + encrypted.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(encrypted), iv.length);
-  let binary = "";
-  const len = combined.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(combined[i]);
-  }
-  return window.btoa(binary);
-}
-
-async function decryptText(encryptedBase64: string, key: CryptoKey): Promise<string> {
-  if (typeof window === "undefined") throw new Error("Window is not defined");
-  try {
-    const binary = window.atob(encryptedBase64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    const iv = bytes.slice(0, 12);
-    const ciphertext = bytes.slice(12);
-    const decrypted = await window.crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: iv
-      },
-      key,
-      ciphertext
-    );
-    const decoder = new TextDecoder();
-    return decoder.decode(decrypted);
-  } catch (err) {
-    return "[Decryption Failed: Invalid Passphrase]";
-  }
-}
 
 export function NoTraceApp() {
   const router = useRouter();
@@ -196,6 +128,10 @@ export function NoTraceApp() {
   const [communities, setCommunities] = useState<Community[]>(seedCommunities);
   const [selectedCommunityId, setSelectedCommunityId] = useState(seedCommunities[0]?.id ?? "");
   const [selectedChannelId, setSelectedChannelId] = useState(seedCommunities[0]?.channels[0]?.id ?? "");
+
+  const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
+  const selectedChannel =
+    selectedCommunity?.channels.find((channel) => channel.id === selectedChannelId) ?? selectedCommunity?.channels[0];
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [requests, setRequests] = useState<JoinRequest[]>(seedRequests);
   const [members, setMembers] = useState<Member[]>(seedMembers);
@@ -226,9 +162,19 @@ export function NoTraceApp() {
   const [identityLoading, setIdentityLoading] = useState(false);
 
   // E2EE & Read Receipts States
-  const [groupPassphrases, setGroupPassphrases] = useState<Record<string, string>>({});
-  const [groupKeys, setGroupKeys] = useState<Record<string, CryptoKey>>({});
-  const [decryptedContents, setDecryptedContents] = useState<Record<string, string>>({});
+  const {
+    groupPassphrases,
+    setGroupPassphrases,
+    groupKeys,
+    setGroupKeys,
+    decryptedContents,
+    setDecryptedContents
+  } = useNoTraceE2EE({
+    messages,
+    selectedCommunityId,
+    selectedChannelId,
+    e2eeMode: selectedCommunity?.e2eeMode
+  });
   const [readReceipts, setReadReceipts] = useState<Record<string, string>>({});
 
   // Settings & Theme states
@@ -292,9 +238,6 @@ export function NoTraceApp() {
   const [contextMenu, setContextMenu] = useState<{ open: boolean; x: number; y: number; communityId?: string; name?: string }>({ open: false, x: 0, y: 0 });
 
   const { socket, connected } = useSocket(accessToken);
-  const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
-  const selectedChannel =
-    selectedCommunity?.channels.find((channel) => channel.id === selectedChannelId) ?? selectedCommunity?.channels[0];
 
   const channelMessages = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -498,142 +441,30 @@ export function NoTraceApp() {
   }, [accessToken, liveReady, loadMembers, loadReports, loadRequests, selectedCommunity?.id, selectedCommunityId, user?.role]);
 
   useEffect(() => {
-    if (!liveReady || !socket || !selectedCommunity?.id || !selectedChannel?.id) {
-      return;
-    }
+    setReadReceipts({});
+  }, [selectedChannelId]);
 
-    if (selectedCommunity.id !== selectedCommunityId || selectedChannel.id !== selectedChannelId) {
-      return;
-    }
-
-    socket.emit("group:join", { groupId: selectedCommunity.id });
-    socket.emit("channel:join", { groupId: selectedCommunity.id, channelId: selectedChannel.id });
-
-    const upsertMessage = ({ message }: { message: ChatMessage }) => {
-      setMessages((current) => {
-        const exists = current.some((item) => item.id === message.id);
-        if (exists) {
-          return current.map((item) => (item.id === message.id ? message : item));
-        }
-
-        if (message.author.anonymousName !== userRef.current?.anonymousName) {
-          playNotificationSound();
-        }
-
-        return [...current, message];
-      });
-    };
-
-    const onMessageReceipt = (payload: { channelId: string; membershipId: string; anonymousName: string; readAt: string }) => {
-      if (payload.channelId === selectedChannel.id) {
-        setReadReceipts((current) => ({
-          ...current,
-          [payload.anonymousName]: payload.readAt
-        }));
-      }
-    };
-
-    const onTyping = (payload: { channelId: string; anonymousName: string; isTyping: boolean }) => {
-      if (payload.channelId === selectedChannel.id) {
-        setTyping(payload.isTyping ? payload.anonymousName : null);
-      }
-    };
-
-    const onNewRequest = ({ request }: { request: JoinRequest }) => {
-      if (request.groupId === selectedCommunity.id) {
-        setRequests((current) => {
-          const exists = current.some((item) => item.id === request.id);
-          if (exists) return current;
-          return [request, ...current];
-        });
-        setNotice("New join request received!");
-      }
-    };
-
-    const onUpdatedRequest = ({ requestId, status }: { requestId: string; status: JoinRequest["status"] }) => {
-      setRequests((current) =>
-        current.map((item) => (item.id === requestId ? { ...item, status } : item))
-      );
-    };
-
-    socket.on("message:new", upsertMessage);
-    socket.on("message:deleted", upsertMessage);
-    socket.on("reaction:updated", upsertMessage);
-    socket.on("typing:update", onTyping);
-    socket.on("request:new", onNewRequest);
-    socket.on("request:updated", onUpdatedRequest);
-    socket.on("message:receipt", onMessageReceipt);
-
-    return () => {
-      socket.off("message:new", upsertMessage);
-      socket.off("message:deleted", upsertMessage);
-      socket.off("reaction:updated", upsertMessage);
-      socket.off("typing:update", onTyping);
-      socket.off("request:new", onNewRequest);
-      socket.off("request:updated", onUpdatedRequest);
-      socket.off("message:receipt", onMessageReceipt);
-    };
-  }, [liveReady, socket, connected, selectedCommunity?.id, selectedCommunityId, selectedChannel?.id, selectedChannelId]);
-
-  const sendReadReceipt = useCallback(() => {
-    if (socket && connected && selectedCommunity?.readReceiptsEnabled && selectedChannel?.id) {
-      socket.emit("message:read", { groupId: selectedCommunity.id, channelId: selectedChannel.id });
-      apiFetch(`/api/groups/${selectedCommunity.id}/membership/read`, { method: "POST" }).catch(() => {});
-    }
-  }, [socket, connected, selectedCommunity, selectedChannel]);
+  const { sendReadReceipt } = useNoTraceSocket({
+    socket,
+    connected,
+    liveReady,
+    selectedCommunityId,
+    selectedChannelId,
+    readReceiptsEnabled: selectedCommunity?.readReceiptsEnabled,
+    userAnonymousName: userRef.current?.anonymousName,
+    setMessages,
+    setReadReceipts,
+    setTyping,
+    setRequests,
+    setNotice,
+    playNotificationSound
+  });
 
   useEffect(() => {
     if (selectedChannel?.id && messages.length > 0) {
       sendReadReceipt();
     }
   }, [selectedChannel?.id, messages.length, sendReadReceipt]);
-
-  useEffect(() => {
-    setReadReceipts({});
-  }, [selectedChannelId]);
-
-  // E2EE Decryption Effect
-  useEffect(() => {
-    if (!selectedCommunity?.e2eeMode) {
-      return;
-    }
-    const key = groupKeys[selectedCommunity.id];
-    if (!key) {
-      return;
-    }
-
-    let active = true;
-
-    async function decryptAll() {
-      const newDecrypted: Record<string, string> = {};
-      let changed = false;
-      for (const msg of messages) {
-        if (msg.channelId === selectedChannelId && msg.content && !decryptedContents[msg.id]) {
-          try {
-            const dec = await decryptText(msg.content, key);
-            newDecrypted[msg.id] = dec;
-            changed = true;
-          } catch (err) {
-            newDecrypted[msg.id] = "[Decryption Failed]";
-            changed = true;
-          }
-        }
-      }
-
-      if (changed && active) {
-        setDecryptedContents((current) => ({
-          ...current,
-          ...newDecrypted
-        }));
-      }
-    }
-
-    void decryptAll();
-
-    return () => {
-      active = false;
-    };
-  }, [messages, groupKeys, selectedCommunityId, selectedCommunity?.e2eeMode, selectedChannelId]);
 
   if (!selectedCommunity || !selectedChannel) {
     return (
