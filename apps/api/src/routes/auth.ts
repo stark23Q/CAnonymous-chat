@@ -3,7 +3,7 @@ import express from "express";
 import cookie from "cookie";
 import { MembershipStatus, TokenPurpose, UserRole } from "@prisma/client";
 import { z } from "zod";
-import { env } from "../config/env.js";
+import { env, isProduction } from "../config/env.js";
 import { createOpaqueToken, hashLookupValue, hashToken, signAccessToken, verifyRefreshToken } from "../lib/crypto.js";
 import { prisma } from "../lib/prisma.js";
 import { issueCsrfToken, requireCsrf } from "../middleware/csrf.js";
