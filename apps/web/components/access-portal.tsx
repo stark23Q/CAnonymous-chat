@@ -86,7 +86,7 @@ export function AccessPortal({
   };
 
   return (
-    <div className="flex min-h-dvh w-full items-center justify-center bg-[#050505] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] text-foreground p-4">
+    <div className="flex min-h-dvh w-full items-center justify-center bg-[#050505] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] text-foreground p-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       <div className="w-full max-w-md relative">
         {/* Glow Effects */}
         <div className="absolute -inset-[1px] bg-gradient-to-b from-primary/30 to-transparent rounded-3xl blur-md opacity-50" />

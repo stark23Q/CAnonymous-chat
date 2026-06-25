@@ -740,7 +740,7 @@ export function NoTraceApp() {
           }}
         />
       ) : (
-      <main className="relative z-10 grid h-dvh grid-cols-[64px_minmax(0,1fr)] overflow-hidden bg-transparent text-foreground lg:grid-cols-[72px_280px_minmax(0,1fr)]">
+      <main className="relative z-10 grid h-dvh grid-cols-[64px_minmax(0,1fr)] overflow-hidden bg-transparent text-foreground lg:grid-cols-[72px_280px_minmax(0,1fr)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <nav className="flex h-full flex-col items-center border-r border-white/5 glass-panel py-3">
           <div className="mb-4 grid h-11 w-11 place-items-center rounded-xl border border-primary/40 bg-primary/20 text-primary shadow-[0_0_15px_-3px] shadow-primary/30">
             <Shield className="h-5 w-5" aria-hidden />

@@ -29,7 +29,7 @@ export function ConfessionComposer({
   };
 
   return (
-    <div className="shrink-0 px-4 pb-6 pt-2 md:px-6 md:pb-8">
+    <div className="shrink-0 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:px-6 md:pb-[calc(env(safe-area-inset-bottom)+2rem)]">
       <div className="mx-auto max-w-4xl">
         {/* Confession mode banner */}
         <div className="mb-2 flex items-center gap-2 rounded-md border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-violet-300">

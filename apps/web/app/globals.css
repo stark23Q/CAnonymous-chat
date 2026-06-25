@@ -34,11 +34,13 @@ body {
 body {
   margin: 0;
   overflow: hidden;
+  overscroll-behavior: none;
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0;
   text-rendering: geometricPrecision;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .glass-panel {
