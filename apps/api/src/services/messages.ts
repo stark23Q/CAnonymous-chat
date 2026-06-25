@@ -176,7 +176,7 @@ export async function createChatMessage(input: {
       const payload = JSON.stringify({
         title: group.name,
         body: `New message in ${group.name}`,
-        url: `/g/${group.slug}`
+        url: `/`
       });
 
       for (const sub of subscriptions) {
