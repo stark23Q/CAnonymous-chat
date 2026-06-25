@@ -108,10 +108,35 @@ export function useNoTraceData({
     if (!accessToken) return [];
     const data = await apiFetch<{ groups: ApiGroup[] }>("/api/groups", { headers: { Authorization: `Bearer ${accessToken}` } });
     const nextCommunities = data.groups.map(toCommunity);
-    const firstCommunity = nextCommunities[0];
+
+    // Check for deep-link from push notification
+    let targetGroupId: string | null = null;
+    let targetChannelId: string | null = null;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      targetGroupId = params.get("groupId");
+      targetChannelId = params.get("channelId");
+      if (targetGroupId) {
+        // Clean the URL after reading params
+        window.history.replaceState({}, "", "/");
+      }
+    }
+
+    const matchedCommunity = targetGroupId
+      ? nextCommunities.find(c => c.id === targetGroupId)
+      : null;
+
+    const firstCommunity = matchedCommunity || nextCommunities[0];
     setCommunities(nextCommunities);
     setSelectedCommunityId(firstCommunity?.id ?? "");
-    setSelectedChannelId(firstCommunity?.channels[0]?.id ?? "");
+
+    if (matchedCommunity && targetChannelId) {
+      const matchedChannel = matchedCommunity.channels.find(ch => ch.id === targetChannelId);
+      setSelectedChannelId(matchedChannel?.id ?? matchedCommunity.channels[0]?.id ?? "");
+    } else {
+      setSelectedChannelId(firstCommunity?.channels[0]?.id ?? "");
+    }
+
     setMessages([]);
     setRequests([]);
     setMembers([]);

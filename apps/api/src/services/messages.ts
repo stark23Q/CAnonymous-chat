@@ -176,6 +176,8 @@ export async function createChatMessage(input: {
       const payload = JSON.stringify({
         title: group.name,
         body: `New message in ${group.name}`,
+        groupId: group.id,
+        channelId: input.channelId,
         url: `/`
       });
 

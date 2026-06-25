@@ -8,8 +8,8 @@ self.addEventListener('push', function (event) {
       vibrate: [100, 50, 100],
       data: {
         dateOfArrival: Date.now(),
-        primaryKey: '2',
-        url: data.url
+        groupId: data.groupId || null,
+        channelId: data.channelId || null
       },
     };
     event.waitUntil(self.registration.showNotification(data.title, options));
@@ -18,11 +18,26 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
-  const targetUrl = self.location.origin + (event.notification.data?.url || '/');
+  var notifData = event.notification.data || {};
+  var params = '';
+  if (notifData.groupId) {
+    params = '?groupId=' + encodeURIComponent(notifData.groupId);
+    if (notifData.channelId) {
+      params += '&channelId=' + encodeURIComponent(notifData.channelId);
+    }
+  }
+  var targetUrl = self.location.origin + '/' + params;
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      for (const client of clientList) {
+      for (var i = 0; i < clientList.length; i++) {
+        var client = clientList[i];
         if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.postMessage({
+            type: 'NOTIFICATION_CLICK',
+            groupId: notifData.groupId,
+            channelId: notifData.channelId
+          });
           return client.focus();
         }
       }

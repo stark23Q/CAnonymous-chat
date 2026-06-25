@@ -214,6 +214,31 @@ export function NoTraceApp() {
     setReadReceipts({});
   }, [selectedChannelId]);
 
+  // Listen for notification click deep-links from service worker
+  useEffect(() => {
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data?.type === "NOTIFICATION_CLICK") {
+        const { groupId, channelId } = event.data;
+        if (groupId) {
+          const community = communities.find(c => c.id === groupId);
+          if (community) {
+            setSelectedCommunityId(community.id);
+            if (channelId) {
+              const channel = community.channels.find(ch => ch.id === channelId);
+              setSelectedChannelId(channel?.id ?? community.channels[0]?.id ?? "");
+            } else {
+              setSelectedChannelId(community.channels[0]?.id ?? "");
+            }
+          }
+        }
+      }
+    };
+    navigator.serviceWorker?.addEventListener("message", handleSWMessage);
+    return () => {
+      navigator.serviceWorker?.removeEventListener("message", handleSWMessage);
+    };
+  }, [communities, setSelectedCommunityId, setSelectedChannelId]);
+
   const { sendReadReceipt } = useNoTraceSocket({
     socket,
     connected,
