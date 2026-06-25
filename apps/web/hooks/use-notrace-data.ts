@@ -105,7 +105,8 @@ export function useNoTraceData({
   const [liveReady, setLiveReady] = useState(false);
 
   const loadGroups = useCallback(async () => {
-    const data = await apiFetch<{ groups: ApiGroup[] }>("/api/groups");
+    if (!accessToken) return [];
+    const data = await apiFetch<{ groups: ApiGroup[] }>("/api/groups", { headers: { Authorization: `Bearer ${accessToken}` } });
     const nextCommunities = data.groups.map(toCommunity);
     const firstCommunity = nextCommunities[0];
     setCommunities(nextCommunities);
@@ -116,19 +117,20 @@ export function useNoTraceData({
     setMembers([]);
     setLiveReady(true);
     setNotice(nextCommunities.length ? "Live API connected." : "Live API connected. Create a community to begin.");
-  }, [setNotice]);
+  }, [setNotice, accessToken]);
 
   const loadRequests = useCallback(async (groupId: string) => {
     const data = await apiFetch<{ requests: ApiJoinRequest[] }>(
-      `/api/admin/join-requests?groupId=${encodeURIComponent(groupId)}`
+      `/api/admin/join-requests?groupId=${encodeURIComponent(groupId)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     setRequests(data.requests.map(toJoinRequest));
-  }, []);
+  }, [accessToken]);
 
   const loadMembers = useCallback(async (groupId: string) => {
-    const data = await apiFetch<{ members: ApiMember[] }>(`/api/admin/groups/${groupId}/members`);
+    const data = await apiFetch<{ members: ApiMember[] }>(`/api/admin/groups/${groupId}/members`, { headers: { Authorization: `Bearer ${accessToken}` } });
     setMembers(data.members.map(toMember));
-  }, []);
+  }, [accessToken]);
 
   const loadAdminUsers = useCallback(async () => {
     if (user?.role !== "ADMIN") return;
@@ -144,19 +146,20 @@ export function useNoTraceData({
 
   const loadReports = useCallback(async (groupId: string) => {
     try {
-      const data = await apiFetch<{ reports: AdminReport[] }>(`/api/admin/reports?groupId=${groupId}`);
+      const data = await apiFetch<{ reports: AdminReport[] }>(`/api/admin/reports?groupId=${groupId}`, { headers: { Authorization: `Bearer ${accessToken}` } });
       setReports(data.reports);
     } catch {
       // non-critical
     }
-  }, []);
+  }, [accessToken]);
 
   const loadMessages = useCallback(async (groupId: string, channelId: string) => {
     const data = await apiFetch<{ messages: ChatMessage[] }>(
-      `/api/groups/${groupId}/channels/${channelId}/messages?limit=80`
+      `/api/groups/${groupId}/channels/${channelId}/messages?limit=80`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     setMessages(data.messages);
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) {

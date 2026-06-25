@@ -8,6 +8,19 @@ export async function getApprovedMembership(userId: string, groupId: string) {
 }
 
 export async function assertApprovedMembership(userId: string, groupId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user?.role === UserRole.ADMIN) {
+    return {
+      id: "admin-bypass",
+      userId,
+      groupId,
+      identityCommitment: "admin",
+      alias: "Admin",
+      status: MembershipStatus.APPROVED,
+      joinedAt: new Date()
+    } as any;
+  }
+
   const membership = await getApprovedMembership(userId, groupId);
   if (!membership || membership.status !== MembershipStatus.APPROVED) {
     const error = new Error("You are not an approved member of this group.");
