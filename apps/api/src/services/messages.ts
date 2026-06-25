@@ -4,6 +4,7 @@ import { assertApprovedMembership } from "./access.js";
 import { moderateMessage } from "./moderation.js";
 import { expiresAtForPolicy } from "./retention.js";
 import { sanitizeOptionalText } from "../utils/sanitize.js";
+import webpush from "web-push";
 
 export const messageInclude = {
   membership: {
@@ -143,7 +144,7 @@ export async function createChatMessage(input: {
     }
   }
 
-  return prisma.message.create({
+  const message = await prisma.message.create({
     data: {
       groupId: group.id,
       channelId: channel.id,
@@ -163,4 +164,37 @@ export async function createChatMessage(input: {
     },
     include: messageInclude
   });
+
+  setImmediate(async () => {
+    try {
+      const subscriptions = await prisma.pushSubscription.findMany({
+        where: {
+          user: { memberships: { some: { groupId: group.id } } },
+          userId: { not: input.userId }
+        }
+      });
+      const payload = JSON.stringify({
+        title: group.name,
+        body: `New message in ${group.name}`,
+        url: `/g/${group.slug}`
+      });
+
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth }
+          }, payload);
+        } catch (e: any) {
+          if (e.statusCode === 410) {
+            await prisma.pushSubscription.delete({ where: { id: sub.id } });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Push notification error:", e);
+    }
+  });
+
+  return message;
 }

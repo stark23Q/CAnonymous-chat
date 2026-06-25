@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, AlertTriangle, X, ShieldCheck } from "lucide-react";
+import { RefreshCw, AlertTriangle, X, ShieldCheck, Bell } from "lucide-react";
 import { AnonymousAvatar } from "@/components/anonymous-avatar";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 type CurrentUser = {
   anonymousName: string;
@@ -25,6 +27,7 @@ export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, on
   const [confirming, setConfirming] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(currentUser.anonymousName);
+  const { isSupported, isSubscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications();
 
   const handleConfirm = async () => {
     await onRotate();
@@ -92,6 +95,29 @@ export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, on
               <code className="text-xs font-mono text-blue-200 truncate select-all">{currentUser.recoveryPhrase}</code>
             </div>
             <p className="text-[10px] text-blue-300 mt-1">Copy and save this to log back in later.</p>
+          </div>
+        )}
+
+        {isSupported && (
+          <div className="mt-2 flex w-full items-center justify-between rounded-lg border border-white/10 bg-black/40 p-3">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-primary" />
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground">Notifications</span>
+                <span className="text-[10px] text-muted-foreground">Receive push alerts</span>
+              </div>
+            </div>
+            <Switch
+              checked={isSubscribed}
+              disabled={pushLoading}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  subscribe();
+                } else {
+                  unsubscribe();
+                }
+              }}
+            />
           </div>
         )}
       </div>
