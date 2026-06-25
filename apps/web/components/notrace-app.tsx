@@ -33,7 +33,7 @@ import { useSocket } from "@/hooks/use-socket";
 import { useNoTraceSocket } from "@/hooks/use-notrace-socket";
 import { useNoTraceE2EE } from "@/hooks/use-notrace-e2ee";
 import { useNoTraceAuth } from "@/hooks/use-notrace-auth";
-import { useNoTraceData } from "@/hooks/use-notrace-data";
+import { useNoTraceData, ApiGroup, toCommunity } from "@/hooks/use-notrace-data";
 import { deriveKey, encryptText } from "@/lib/e2ee";
 import { useRouter } from "next/navigation";
 import { AccessPortal } from "@/components/access-portal";

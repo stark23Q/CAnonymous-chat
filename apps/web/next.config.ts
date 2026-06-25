@@ -4,11 +4,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:4000";
     return [
       {
         source: "/api/:path*",
-        // Proxy to the backend port on localhost
-        destination: "http://127.0.0.1:4000/api/:path*"
+        destination: `${apiUrl}/api/:path*`
       }
     ];
   },

@@ -16,3 +16,6 @@ tmp
 signing-key-info.txt
 *.apk
 *.aab
+
+.vercel
+.env*
