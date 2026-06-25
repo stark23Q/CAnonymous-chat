@@ -10,15 +10,19 @@ export async function getApprovedMembership(userId: string, groupId: string) {
 export async function assertApprovedMembership(userId: string, groupId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (user?.role === UserRole.ADMIN) {
-    return {
-      id: "admin-bypass",
-      userId,
-      groupId,
-      identityCommitment: "admin",
-      alias: "Admin",
-      status: MembershipStatus.APPROVED,
-      joinedAt: new Date()
-    } as any;
+    let membership = await getApprovedMembership(userId, groupId);
+    if (!membership) {
+      membership = await prisma.membership.create({
+        data: {
+          userId,
+          groupId,
+          status: MembershipStatus.APPROVED,
+          anonymousName: "Admin",
+          avatarSeed: "admin"
+        }
+      });
+    }
+    return membership;
   }
 
   const membership = await getApprovedMembership(userId, groupId);
