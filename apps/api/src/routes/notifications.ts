@@ -32,7 +32,7 @@ export function notificationRoutes(): Router {
   router.post("/subscribe", requireAuth, async (req, res, next) => {
     try {
       const { endpoint, keys } = subscribeSchema.parse(req.body);
-      const userId = req.user!.id;
+      const userId = req.auth!.userId;
 
       await prisma.pushSubscription.upsert({
         where: {
@@ -62,7 +62,7 @@ export function notificationRoutes(): Router {
   router.post("/unsubscribe", requireAuth, async (req, res, next) => {
     try {
       const endpoint = req.body.endpoint;
-      const userId = req.user!.id;
+      const userId = req.auth!.userId;
       if (!endpoint) {
         res.status(400).json({ error: "Endpoint is required" });
         return;
