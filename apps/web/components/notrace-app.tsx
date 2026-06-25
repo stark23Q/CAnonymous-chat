@@ -13,7 +13,6 @@ import { PollsPanel } from "@/components/chat/polls-panel";
 import { QAPanel } from "@/components/chat/qa-panel";
 import { VoiceChannel } from "@/components/chat/voice-channel";
 import { AdminPanel } from "@/components/dashboard/admin-panel";
-import type { AdminReport } from "@/components/dashboard/admin-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,115 +27,64 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiFetch } from "@/lib/api";
-import { communities as seedCommunities, initialMessages, joinRequests as seedRequests, members as seedMembers } from "@/lib/sample-data";
 import type { Channel, ChatMessage, Community, JoinRequest, Member, NoTraceUser, Poll, Confession, Question, AdminUser } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/hooks/use-socket";
 import { useNoTraceSocket } from "@/hooks/use-notrace-socket";
 import { useNoTraceE2EE } from "@/hooks/use-notrace-e2ee";
+import { useNoTraceAuth } from "@/hooks/use-notrace-auth";
+import { useNoTraceData } from "@/hooks/use-notrace-data";
 import { deriveKey, encryptText } from "@/lib/e2ee";
 import { useRouter } from "next/navigation";
 import { AccessPortal } from "@/components/access-portal";
 
-type AuthResponse = {
-  user: NoTraceUser;
-  accessToken: string;
-};
-
-type ApiGroup = Community & {
-  _count?: {
-    memberships?: number;
-    messages?: number;
-    joinRequests?: number;
-  };
-};
-
-type ApiJoinRequest = {
-  id: string;
-  groupId: string;
-  requestedAlias: string | null;
-  reason: string | null;
-  createdAt: string;
-  status: JoinRequest["status"];
-  group: {
-    id: string;
-    name: string;
-  };
-};
-
-type ApiMember = Member & {
-  user?: {
-    id: string;
-    role: string;
-  };
-};
-
 const fallbackNotice = "Live API unavailable, showing local sample data.";
 
-function toCommunity(group: ApiGroup): Community {
-  return {
-    id: group.id,
-    ...(group.slug ? { slug: group.slug } : {}),
-    name: group.name,
-    description: group.description,
-    createdById: group.createdById,
-    rules: group.rules,
-    retentionPolicy: group.retentionPolicy,
-    privacyMode: group.privacyMode,
-    readReceiptsEnabled: group.readReceiptsEnabled,
-    typingEnabled: group.typingEnabled,
-    e2eeMode: group.e2eeMode,
-    channels: group.channels.map((channel) => ({
-      id: channel.id,
-      name: channel.name,
-      kind: channel.kind
-    })),
-    memberCount: group._count?.memberships ?? group.memberCount ?? 0
-  };
-}
-
-function toJoinRequest(request: ApiJoinRequest): JoinRequest {
-  return {
-    id: request.id,
-    groupId: request.groupId,
-    groupName: request.group.name,
-    requestedAlias: request.requestedAlias,
-    reason: request.reason ?? "No reason provided.",
-    createdAt: request.createdAt,
-    status: request.status
-  };
-}
-
-function toMember(member: ApiMember): Member {
-  return {
-    id: member.id,
-    anonymousName: member.anonymousName,
-    avatarSeed: member.avatarSeed,
-    status: member.status,
-    joinedAt: member.joinedAt
-  };
-}
 
 
 
 export function NoTraceApp() {
   const router = useRouter();
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : window.localStorage.getItem("notrace_access")
-  );
-  const [user, setUser] = useState<NoTraceUser | null>(null);
-  const [communities, setCommunities] = useState<Community[]>(seedCommunities);
-  const [selectedCommunityId, setSelectedCommunityId] = useState(seedCommunities[0]?.id ?? "");
-  const [selectedChannelId, setSelectedChannelId] = useState(seedCommunities[0]?.channels[0]?.id ?? "");
+  const {
+    accessToken,
+    setAccessToken,
+    user,
+    setUser,
+    welcomePhrase,
+    setWelcomePhrase,
+    loading,
+    setLoading,
+    notice,
+    setNotice,
+    logout
+  } = useNoTraceAuth({ fallbackNotice });
 
-  const selectedCommunity = communities.find((community) => community.id === selectedCommunityId) ?? communities[0];
-  const selectedChannel =
-    selectedCommunity?.channels.find((channel) => channel.id === selectedChannelId) ?? selectedCommunity?.channels[0];
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
-  const [requests, setRequests] = useState<JoinRequest[]>(seedRequests);
-  const [members, setMembers] = useState<Member[]>(seedMembers);
-  const [reports, setReports] = useState<AdminReport[]>([]);
-  const [adminUsers, setAdminUsers] = useState<AdminUser[] | null>(null);
+  const {
+    communities,
+    setCommunities,
+    selectedCommunityId,
+    setSelectedCommunityId,
+    selectedChannelId,
+    setSelectedChannelId,
+    selectedCommunity,
+    selectedChannel,
+    messages,
+    setMessages,
+    requests,
+    setRequests,
+    members,
+    setMembers,
+    reports,
+    setReports,
+    adminUsers,
+    setAdminUsers,
+    liveReady,
+    setLiveReady,
+    loadAdminUsers,
+    loadRequests,
+    loadMembers
+  } = useNoTraceData({ accessToken, user, setLoading, setNotice, fallbackNotice });
+
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [typing, setTyping] = useState<string | null>(null);
   const [mobileChannelsOpen, setMobileChannelsOpen] = useState(false);
@@ -144,10 +92,6 @@ export function NoTraceApp() {
   const [busyRequestId, setBusyRequestId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [muted, setMuted] = useState(false);
-  const [notice, setNotice] = useState("Connecting to NoTrace API...");
-  const [welcomePhrase, setWelcomePhrase] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [liveReady, setLiveReady] = useState(false);
 
   // Phase 2 — Polls & Confessions
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -264,181 +208,7 @@ export function NoTraceApp() {
     });
   }, [messages, searchQuery, selectedChannel?.id, selectedCommunity?.e2eeMode, decryptedContents]);
 
-  const loadGroups = useCallback(async () => {
-    const data = await apiFetch<{ groups: ApiGroup[] }>("/api/groups");
-    const nextCommunities = data.groups.map(toCommunity);
-    const firstCommunity = nextCommunities[0];
-    setCommunities(nextCommunities);
-    setSelectedCommunityId(firstCommunity?.id ?? "");
-    setSelectedChannelId(firstCommunity?.channels[0]?.id ?? "");
-    setMessages([]);
-    setRequests([]);
-    setMembers([]);
-    setLiveReady(true);
-    setNotice(nextCommunities.length ? "Live API connected." : "Live API connected. Create a community to begin.");
-  }, []);
 
-  const loadRequests = useCallback(async (groupId: string) => {
-    const data = await apiFetch<{ requests: ApiJoinRequest[] }>(
-      `/api/admin/join-requests?groupId=${encodeURIComponent(groupId)}`
-    );
-    setRequests(data.requests.map(toJoinRequest));
-  }, []);
-
-  const loadMembers = useCallback(async (groupId: string) => {
-    const data = await apiFetch<{ members: ApiMember[] }>(`/api/admin/groups/${groupId}/members`);
-    setMembers(data.members.map(toMember));
-  }, []);
-
-  const loadAdminUsers = useCallback(async () => {
-    if (user?.role !== "ADMIN") return;
-    try {
-      const data = await apiFetch<{ users: AdminUser[] }>("/api/admin/users", {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-      setAdminUsers(data.users);
-    } catch (error) {
-      console.error("Failed to load users:", error);
-    }
-  }, [user, accessToken]);
-
-  const loadReports = useCallback(async (groupId: string) => {
-    try {
-      const data = await apiFetch<{ reports: AdminReport[] }>(`/api/admin/reports?groupId=${groupId}`);
-      setReports(data.reports);
-    } catch {
-      // non-critical, don't surface error
-    }
-  }, []);
-
-  const loadMessages = useCallback(async (groupId: string, channelId: string) => {
-    const data = await apiFetch<{ messages: ChatMessage[] }>(
-      `/api/groups/${groupId}/channels/${channelId}/messages?limit=80`
-    );
-    setMessages(data.messages);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function bootstrap() {
-      try {
-        let token = typeof window === "undefined" ? null : window.localStorage.getItem("notrace_access");
-        if (token) {
-          try {
-            const data = await apiFetch<{ user: NoTraceUser }>("/api/auth/me");
-            if (!active) {
-              return;
-            }
-            // Restore recovery phrase from local storage if cached
-            const cachedRecovery = typeof window !== "undefined" ? window.localStorage.getItem("notrace_recovery") : null;
-            const showWelcome = typeof window !== "undefined" ? window.localStorage.getItem("notrace_show_welcome") : null;
-
-            const userData: NoTraceUser = { ...data.user };
-            if (cachedRecovery) {
-              userData.recoveryPhrase = cachedRecovery;
-            }
-            setUser(userData);
-            setAccessToken(token);
-
-            if (showWelcome === "true" && cachedRecovery) {
-              setWelcomePhrase(cachedRecovery);
-              window.localStorage.removeItem("notrace_show_welcome");
-            }
-          } catch {
-            window.localStorage.removeItem("notrace_access");
-            window.localStorage.removeItem("notrace_recovery");
-            token = null;
-          }
-        }
-
-        if (!token) {
-          if (active) {
-            setLoading(false);
-          }
-        }
-      } catch {
-        if (active) {
-          setNotice(fallbackNotice);
-          setLoading(false);
-        }
-      }
-    }
-
-    void bootstrap();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!accessToken) {
-      return;
-    }
-
-    let active = true;
-    setLoading(true);
-    setLiveReady(false);
-    loadGroups()
-      .catch(() => {
-        if (active) {
-          setLiveReady(false);
-          setNotice(fallbackNotice);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [accessToken, loadGroups]);
-
-  useEffect(() => {
-    if (!selectedCommunity) {
-      return;
-    }
-
-    if (selectedCommunity.id !== selectedCommunityId) {
-      setSelectedCommunityId(selectedCommunity.id);
-      setSelectedChannelId(selectedCommunity.channels[0]?.id ?? "");
-      return;
-    }
-
-    if (!selectedCommunity.channels.some((channel) => channel.id === selectedChannelId)) {
-      setSelectedChannelId(selectedCommunity.channels[0]?.id ?? "");
-    }
-  }, [selectedChannelId, selectedCommunity, selectedCommunityId]);
-
-  useEffect(() => {
-    if (!liveReady || !accessToken || !selectedCommunity?.id || !selectedChannel?.id) {
-      return;
-    }
-
-    if (selectedCommunity.id !== selectedCommunityId || selectedChannel.id !== selectedChannelId) {
-      return;
-    }
-
-    void loadMessages(selectedCommunity.id, selectedChannel.id).catch(() => setNotice("Could not load messages."));
-  }, [accessToken, liveReady, loadMessages, selectedChannel?.id, selectedChannelId, selectedCommunity?.id, selectedCommunityId]);
-
-  useEffect(() => {
-    if (!liveReady || !accessToken || !selectedCommunity?.id || user?.role !== "ADMIN") {
-      return;
-    }
-
-    if (selectedCommunity.id !== selectedCommunityId) {
-      return;
-    }
-
-    void Promise.all([loadRequests(selectedCommunity.id), loadMembers(selectedCommunity.id), loadReports(selectedCommunity.id)]).catch(() =>
-      setNotice("Could not load admin data.")
-    );
-  }, [accessToken, liveReady, loadMembers, loadReports, loadRequests, selectedCommunity?.id, selectedCommunityId, user?.role]);
 
   useEffect(() => {
     setReadReceipts({});
@@ -1542,7 +1312,9 @@ export function NoTraceApp() {
                     )}
                     onClick={() => {
                       setTheme(t.id);
-                      window.localStorage.setItem("notrace_theme", t.id);
+                      if (typeof window !== "undefined") {
+                        window.localStorage.setItem("notrace_theme", t.id);
+                      }
                     }}
                   >
                     {t.label}
