@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FileUp, Gift, Ghost, ImageIcon, Laugh, Send, Timer, X } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
+import { EmojiPicker } from "@/components/chat/emoji-picker";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +38,7 @@ const EXPIRY_OPTIONS: { label: string; seconds: number | null }[] = [
   { label: "7 days", seconds: 604_800 }
 ];
 
-const EMOJIS = ["😂", "🔥", "✅", "❤️", "👍", "👎", "😭", "💀", "👀", "✨", "💯", "🎉"];
+
 
 export function Composer({
   channelName,
@@ -59,6 +65,7 @@ export function Composer({
   const [memeUrlInput, setMemeUrlInput] = useState("");
   const typingTimeout = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const isConfession = forceConfessionMode || isConfessionState;
 
@@ -232,34 +239,31 @@ export function Composer({
                 </TooltipTrigger>
                 <TooltipContent>Attach image URL</TooltipContent>
               </Tooltip>
-              <DropdownMenu>
+              <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
+                    <PopoverTrigger asChild>
                       <Button type="button" variant="ghost" size="iconSm">
                         <Laugh className="h-4 w-4" aria-hidden />
                       </Button>
-                    </DropdownMenuTrigger>
+                    </PopoverTrigger>
                   </TooltipTrigger>
                   <TooltipContent>Emoji</TooltipContent>
                 </Tooltip>
-                <DropdownMenuContent align="center" className="w-48 p-2 bg-black/80 backdrop-blur border-white/10">
-                  <div className="grid grid-cols-4 gap-1">
-                    {EMOJIS.map((emoji) => (
-                      <Button
-                        key={emoji}
-                        type="button"
-                        variant="ghost"
-                        size="iconSm"
-                        className="text-lg hover:bg-white/10"
-                        onClick={() => handleTyping(`${value}${emoji}`)}
-                      >
-                        {emoji}
-                      </Button>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                <PopoverContent
+                  align="start"
+                  side="top"
+                  sideOffset={8}
+                  className="w-auto p-0 border-0 bg-transparent shadow-none"
+                >
+                  <EmojiPicker
+                    onSelect={(emoji) => {
+                      handleTyping(`${value}${emoji}`);
+                      setEmojiOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
 
               <div className="w-px h-4 bg-white/10 mx-1" />
 

@@ -1,0 +1,179 @@
+scheduling build on Metal builder "production-builderv3-us-west1-32ww"
+[INFO] uploading snapshot
+fetched snapshot sha256:144310e7d2d57ff0eda82073d5693a1032214ae362e82eb7500b022cd5a64391 (14 MB bytes)
+[INFO] fetching snapshot
+[INFO] modified file: apps/web/components/notrace-app.tsx (57554b -> 58555b)
+[INFO] unpacking archive
+using build driver nixpacks-v1.41.0
+
+╔══════════════════════════════ Nixpacks v1.41.0 ══════════════════════════════╗
+║ setup      │ nodejs_24, pnpm-9_x, openssl                                    ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ install    │ npm install -g corepack@0.24.1 && corepack enable               ║
+║            │ pnpm i --frozen-lockfile                                        ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ build      │ pnpm run db:generate && pnpm --filter @anonymous-chat/api build ║
+║──────────────────────────────────────────────────────────────────────────────║
+║ start      │ pnpm --filter @anonymous-chat/api prisma db push --accept-data- ║
+║            │ loss && pnpm --filter @anonymous-chat/api start                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+
+Saved output to:
+  snapshot-target-unpack
+[INFO] [internal] load build definition from Dockerfile
+[INFO] [internal] load build definition from Dockerfile
+[INFO] [internal] load build definition from Dockerfile
+[INFO] [internal] load build definition from Dockerfile
+[INFO] [internal] load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+[INFO] [internal] load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+[INFO] [internal] load .dockerignore
+[INFO] [internal] load .dockerignore
+[INFO] [internal] load .dockerignore
+[INFO] [internal] load .dockerignore
+[INFO] [internal] load .dockerignore
+[WARN] UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 18)(https://docs.docker.com/go/dockerfile/rule/undefined-var/)
+ details: Variables should be defined before their use
+
+[INFO] [stage-0 11/11] COPY . /app
+[INFO] [stage-0 10/11] RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+[INFO] [stage-0  9/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-apps/web/next/cache,target=/app/apps/web/.next/cache --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-node_modules/cache,target=/app/node_modules/.cache pnpm run db:generate && pnpm --filter @anonymous-chat/api build
+[INFO] [stage-0  8/11] COPY . /app/.
+[INFO] [stage-0  7/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 pnpm i --frozen-lockfile
+[INFO] [stage-0  6/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 npm install -g corepack@0.24.1 && corepack enable
+[INFO] [stage-0  5/11] COPY . /app/.
+[INFO] [stage-0  4/11] RUN nix-env -if .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix && nix-collect-garbage -d
+[INFO] [stage-0  3/11] COPY .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix
+[INFO] [internal] load build context
+[INFO] [stage-0  2/11] WORKDIR /app/
+[INFO] [stage-0  1/11] FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+[INFO] [stage-0  1/11] FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+[INFO] [internal] load build context
+[INFO] [internal] load build context
+[INFO] [stage-0  1/11] FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+[INFO] [internal] load build context
+[INFO] [stage-0  2/11] WORKDIR /app/
+[INFO] [stage-0  3/11] COPY .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix
+[INFO] [stage-0  4/11] RUN nix-env -if .nixpacks/nixpkgs-23f9169c4ccce521379e602cc82ed873a1f1b52b.nix && nix-collect-garbage -d
+[INFO] [stage-0  5/11] COPY . /app/.
+[INFO] [stage-0  5/11] COPY . /app/.
+[INFO] [stage-0  6/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 npm install -g corepack@0.24.1 && corepack enable
+[INFO] npm warn config production Use `--omit=dev` instead.
+
+[INFO] 
+changed 1 package in 967ms
+
+[INFO] [stage-0  6/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 npm install -g corepack@0.24.1 && corepack enable
+[INFO] [stage-0  7/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 pnpm i --frozen-lockfile
+[INFO] Scope: all 3 workspace projects
+
+[INFO] (node:1) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[INFO] Lockfile is up to date, resolution step is skipped
+
+[INFO] Progress: resolved 1, reused 0, downloaded 0, added 0
+
+[INFO] Packages: +470
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+[INFO] Progress: resolved 470, reused 470, downloaded 0, added 465
+
+[INFO] Progress: resolved 470, reused 470, downloaded 0, added 468
+
+[INFO] Progress: resolved 470, reused 470, downloaded 0, added 469
+
+[INFO] Progress: resolved 470, reused 470, downloaded 0, added 470
+
+[INFO] Progress: resolved 470, reused 470, downloaded 0, added 470, done
+
+[INFO] 
+[INFO] Done in 5.4s
+
+[INFO] [stage-0  7/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-/root/local/share/pnpm/store/v3,target=/root/.local/share/pnpm/store/v3 pnpm i --frozen-lockfile
+[INFO] [stage-0  8/11] COPY . /app/.
+[INFO] [stage-0  8/11] COPY . /app/.
+[INFO] [stage-0  9/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-apps/web/next/cache,target=/app/apps/web/.next/cache --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-node_modules/cache,target=/app/node_modules/.cache pnpm run db:generate && pnpm --filter @anonymous-chat/api build
+[INFO] 
+> notrace@0.1.0 db:generate /app
+> corepack pnpm --filter @anonymous-chat/api prisma generate
+
+
+[INFO] 
+> @anonymous-chat/api@0.1.0 prisma /app/apps/api
+> prisma "generate"
+
+
+[INFO] warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+
+[INFO] Prisma schema loaded from prisma/schema.prisma
+
+[INFO] 
+✔ Generated Prisma Client (v6.19.3) to ./../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 138ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+
+[INFO] 
+> @anonymous-chat/api@0.1.0 build /app/apps/api
+> prisma generate && tsc -p tsconfig.json
+
+
+[INFO] warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+
+[INFO] Prisma schema loaded from prisma/schema.prisma
+
+[INFO] ┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.3 -> 7.8.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
+
+[INFO] 
+✔ Generated Prisma Client (v6.19.3) to ./../../node_modules/.pnpm/@prisma+client@6.19.3_prisma@6.19.3_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 131ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+
+[INFO] [stage-0  9/11] RUN --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-apps/web/next/cache,target=/app/apps/web/.next/cache --mount=type=cache,id=s/63906268-a7f5-4326-b83b-89fdca1c0cdc-node_modules/cache,target=/app/node_modules/.cache pnpm run db:generate && pnpm --filter @anonymous-chat/api build
+[INFO] [stage-0 10/11] RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+[INFO] [stage-0 10/11] RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+[INFO] [stage-0 11/11] COPY . /app
+[INFO] [stage-0 11/11] COPY . /app
+[INFO] exporting to docker image format
+[INFO] exporting to docker image format
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6OTFmZDBhNzI2Mzc1MzlmMjFkYWMyMTM2ZGFiYjFmZWJhMTA0Y2MzMTI4OGRiNzliZjc2ZGUxMDg2OGJiZTEwZSIsInNpemUiOjI5NjAsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wNi0yNVQwOTowMDozNFoifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:fc735ccb42772cf2b2fdfacdef588a7927f387d6260b1dec8103baf8e4614edb
+containerimage.digest: sha256:91fd0a72637539f21dac2136dabb1feba104cc31288db79bf76de10868bbe10e
+[INFO] image push
+[INFO] image push
+
+[35m====================
+Starting Healthcheck
+====================
+[0m
+[37mPath: /api/health[0m
+[37mRetry window: 1m40s[0m
+
+[93mAttempt #1 failed with service unavailable. Continuing to retry for 1m29s[0m
+[93mAttempt #2 failed with service unavailable. Continuing to retry for 1m18s[0m
+[93mAttempt #3 failed with service unavailable. Continuing to retry for 1m6s[0m
+[93mAttempt #4 failed with service unavailable. Continuing to retry for 52s[0m
+[93mAttempt #5 failed with service unavailable. Continuing to retry for 34s[0m
+[93mAttempt #6 failed with service unavailable. Continuing to retry for 8s[0m
+
+[91m1/1 replicas never became healthy![0m
+[91mHealthcheck failed![0m

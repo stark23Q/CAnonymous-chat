@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { EmojiPicker } from "@/components/chat/emoji-picker";
+import { SmilePlus } from "lucide-react";
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en", {
@@ -75,6 +77,7 @@ export function MessageList({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [reportTarget, setReportTarget] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const [reactionOpenId, setReactionOpenId] = useState<string | null>(null);
   const [, tick] = useState(0);
 
   // Scroll to bottom on new messages
@@ -204,16 +207,32 @@ export function MessageList({
                         <span>{count}</span>
                       </button>
                     ))}
-                    {["😂", "🔥", "✅"].map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => onReact(message.id, emoji)}
-                        className="grid h-7 w-8 place-items-center rounded border border-transparent text-sm text-muted-foreground opacity-0 transition hover:border-border hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                    <Popover 
+                      open={reactionOpenId === message.id} 
+                      onOpenChange={(open) => setReactionOpenId(open ? message.id : null)}
+                    >
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="grid h-7 w-8 place-items-center rounded border border-transparent text-muted-foreground opacity-0 transition hover:border-border hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                        >
+                          <SmilePlus className="h-4 w-4" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent 
+                        align="start" 
+                        side="top" 
+                        sideOffset={8}
+                        className="w-auto p-0 border-0 bg-transparent shadow-none"
                       >
-                        {emoji}
-                      </button>
-                    ))}
+                        <EmojiPicker
+                          onSelect={(emoji) => {
+                            onReact(message.id, emoji);
+                            setReactionOpenId(null);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 
