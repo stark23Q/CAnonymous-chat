@@ -11,6 +11,7 @@ import { adminRoutes } from "./routes/admin.js";
 import { groupRoutes } from "./routes/groups.js";
 import { messageRoutes } from "./routes/messages.js";
 import { notificationRoutes } from "./routes/notifications.js";
+import { platformAdminRoutes } from "./routes/platform-admin.js";
 import { setupRealtime } from "./realtime.js";
 import { startRetentionSweeper } from "./jobs/retention.js";
 
@@ -36,6 +37,7 @@ app.use("/api/admin", adminRoutes());
 app.use("/api/groups", groupRoutes());
 app.use("/api/messages", messageRoutes());
 app.use("/api/notifications", notificationRoutes());
+app.use("/api/platform-admin", platformAdminRoutes());
 
 app.use(notFoundHandler);
 app.use(errorHandler);

@@ -270,6 +270,15 @@ export function authRoutes(): Router {
           }
         });
 
+        await tx.identityLog.create({
+          data: {
+            userId: createdUser.id,
+            groupId,
+            newName: finalMembershipName,
+            action: "USER_JOINED"
+          }
+        });
+
         return createdUser;
       });
 

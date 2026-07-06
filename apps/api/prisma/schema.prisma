@@ -90,6 +90,7 @@ model User {
   confessions   Confession[]
   questions     Question[]
   pushSubscriptions PushSubscription[]
+  identityLogs  IdentityLog[]
 
   @@index([role])
 }
@@ -121,6 +122,7 @@ model Group {
   confessions  Confession[]
   questions    Question[]
   auditLogs    AuditLog[]
+  identityLogs IdentityLog[]
 
   @@index([createdById])
 }
@@ -402,4 +404,20 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, endpoint])
+}
+
+model IdentityLog {
+  id              String   @id @default(cuid())
+  userId          String
+  groupId         String?  // Null if global identity change
+  oldName         String?
+  newName         String
+  action          String   // e.g. "USER_JOINED", "NAME_CHANGED", "IDENTITY_ROTATED"
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group           Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([groupId, createdAt])
 }

@@ -423,6 +423,16 @@ export function groupRoutes(): Router {
         }
       });
 
+      await prisma.identityLog.create({
+        data: {
+          userId: membership.userId,
+          groupId: req.params.groupId,
+          oldName: membership.anonymousName,
+          newName: identity.anonymousName,
+          action: "IDENTITY_ROTATED"
+        }
+      });
+
       res.json({ membership: updated });
     } catch (error) {
       next(error);
@@ -441,6 +451,16 @@ export function groupRoutes(): Router {
           id: true,
           anonymousName: true,
           avatarSeed: true
+        }
+      });
+
+      await prisma.identityLog.create({
+        data: {
+          userId: membership.userId,
+          groupId: req.params.groupId,
+          oldName: membership.anonymousName,
+          newName: input.newName.trim(),
+          action: "NAME_CHANGED"
         }
       });
 

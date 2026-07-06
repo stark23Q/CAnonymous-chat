@@ -812,9 +812,22 @@ export function NoTraceApp() {
               <Plus className="h-4 w-4" aria-hidden />
             </Button>
           </div>
-          <Button type="button" variant="ghost" size="icon" onClick={() => setSettingsOpen(true)}>
-            <Settings className="h-4 w-4" aria-hidden />
-          </Button>
+          <div className="flex flex-col gap-2">
+            {user?.role === "ADMIN" && (
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => window.location.href = "/admin/identities"}
+                title="Global Admin Dashboard"
+              >
+                <Shield className="h-4 w-4 text-primary" aria-hidden />
+              </Button>
+            )}
+            <Button type="button" variant="ghost" size="icon" onClick={() => setSettingsOpen(true)}>
+              <Settings className="h-4 w-4" aria-hidden />
+            </Button>
+          </div>
         </nav>
 
         <section
