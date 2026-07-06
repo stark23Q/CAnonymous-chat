@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
 import { Shield, ArrowLeft, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,7 +132,13 @@ export default function IdentitiesAdminPage() {
                     filteredLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
-                          {format(new Date(log.createdAt), "MMM d, HH:mm:ss")}
+                          {new Intl.DateTimeFormat("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit"
+                          }).format(new Date(log.createdAt))}
                         </td>
                         <td className="px-6 py-4 font-mono text-xs text-primary/80">
                           {log.user.id}
