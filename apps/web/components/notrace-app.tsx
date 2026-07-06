@@ -82,7 +82,8 @@ export function NoTraceApp() {
     setLiveReady,
     loadAdminUsers,
     loadRequests,
-    loadMembers
+    loadMembers,
+    loadReports
   } = useNoTraceData({ accessToken, user, setLoading, setNotice, fallbackNotice });
 
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
@@ -618,11 +619,12 @@ export function NoTraceApp() {
 
   const reportMessage = async (messageId: string, reason: string) => {
     try {
-      await apiFetch(`/api/groups/${selectedCommunity.id}/messages/${messageId}/report`, {
+      await apiFetch(`/api/groups/${selectedCommunity.id}/messages/${messageId}/reports`, {
         method: "POST",
         body: JSON.stringify({ reason })
       });
       setNotice("Message reported to admin.");
+      void loadReports(selectedCommunity.id);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Could not report message.");
     }
@@ -843,35 +845,35 @@ export function NoTraceApp() {
           user?.role === "ADMIN" && "xl:grid-cols-[minmax(0,1fr)_344px]"
         )}>
           <div className="flex min-w-0 min-h-0 flex-col bg-transparent">
-            <header className="flex h-16 shrink-0 items-center gap-3 border-b border-white/5 glass-panel px-3 md:px-5">
+            <header className="flex h-16 shrink-0 min-w-0 items-center gap-3 border-b border-white/5 glass-panel px-3 md:px-5">
               <Button
                 type="button"
                 variant="ghost"
                 size="iconSm"
-                className="lg:hidden"
+                className="lg:hidden shrink-0"
                 onClick={() => setMobileChannelsOpen((current) => !current)}
               >
                 <Menu className="h-4 w-4" aria-hidden />
               </Button>
-              <div className="grid h-9 w-9 place-items-center rounded-md bg-muted text-muted-foreground">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
                 <Hash className="h-4 w-4" aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h1 className="shrink-0 text-sm font-bold md:text-base">#{selectedChannel.name}</h1>
-                  <Badge tone={connected ? "good" : "neutral"} className="hidden sm:inline-flex">
+                  <h1 className="truncate text-sm font-bold md:text-base">#{selectedChannel.name}</h1>
+                  <Badge tone={connected ? "good" : "neutral"} className="hidden sm:inline-flex shrink-0">
                     {connected ? "realtime" : "api"}
                   </Badge>
                   {selectedCommunity.privacyMode ? (
-                    <Badge tone="warn" className="hidden sm:inline-flex">
+                    <Badge tone="warn" className="hidden sm:inline-flex shrink-0">
                       private
                     </Badge>
                   ) : null}
                 </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  <CircleDot className={cn("h-3 w-3", connected ? "text-primary" : "text-muted-foreground")} aria-hidden />
-                  <span>{notice}</span>
-                  {typing ? <span>{typing} typing</span> : null}
+                <div className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+                  <CircleDot className={cn("h-3 w-3 shrink-0", connected ? "text-primary" : "text-muted-foreground")} aria-hidden />
+                  <span className="truncate">{notice}</span>
+                  {typing ? <span className="shrink-0">{typing} typing</span> : null}
                 </div>
               </div>
               <div className="hidden w-full max-w-xs items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 2xl:flex focus-within:border-primary/50 transition-colors">
@@ -886,12 +888,12 @@ export function NoTraceApp() {
               <Button type="button" variant={muted ? "secondary" : "ghost"} size="iconSm" onClick={() => setMuted((current) => !current)}>
                 {muted ? <BellOff className="h-4 w-4" aria-hidden /> : <Bell className="h-4 w-4" aria-hidden />}
               </Button>
-              <div className="flex items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1">
                   <Button
                     type="button"
                     variant={showConfessions ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-8 gap-1.5"
+                    className="h-8 gap-1.5 px-2 sm:px-3"
                     onClick={() => {
                       setShowConfessions((v) => !v);
                       setShowPolls(false);
@@ -905,7 +907,7 @@ export function NoTraceApp() {
                     type="button"
                     variant={showPolls ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-8 gap-1.5"
+                    className="h-8 gap-1.5 px-2 sm:px-3"
                     onClick={() => {
                       setShowPolls((v) => !v);
                       setShowConfessions(false);
@@ -924,7 +926,7 @@ export function NoTraceApp() {
                     type="button"
                     variant={showQA ? "secondary" : "ghost"}
                     size="sm"
-                    className="h-8 gap-1.5"
+                    className="h-8 gap-1.5 px-2 sm:px-3 hidden min-[400px]:inline-flex"
                     onClick={() => {
                       setShowQA((v) => !v);
                       setShowPolls(false);
