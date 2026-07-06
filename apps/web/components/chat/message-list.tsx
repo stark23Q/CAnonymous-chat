@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { EmojiPicker } from "@/components/chat/emoji-picker";
 import { SmilePlus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("en", {
