@@ -619,7 +619,7 @@ export function NoTraceApp() {
 
   const reportMessage = async (messageId: string, reason: string) => {
     try {
-      await apiFetch(`/api/groups/${selectedCommunity.id}/messages/${messageId}/reports`, {
+      await apiFetch(`/api/messages/${messageId}/reports`, {
         method: "POST",
         body: JSON.stringify({ reason })
       });
