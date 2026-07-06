@@ -858,7 +858,7 @@ export function NoTraceApp() {
               <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
                 <Hash className="h-4 w-4" aria-hidden />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-[120px] flex-1 overflow-hidden">
                 <div className="flex min-w-0 items-center gap-2">
                   <h1 className="truncate text-sm font-bold md:text-base">#{selectedChannel.name}</h1>
                   <Badge tone={connected ? "good" : "neutral"} className="hidden sm:inline-flex shrink-0">
@@ -876,13 +876,13 @@ export function NoTraceApp() {
                   {typing ? <span className="shrink-0">{typing} typing</span> : null}
                 </div>
               </div>
-              <div className="hidden w-full max-w-xs items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 2xl:flex focus-within:border-primary/50 transition-colors">
-                <Search className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <div className="hidden min-w-[120px] max-w-[240px] shrink items-center gap-2 rounded-lg border border-white/10 bg-black/40 px-3 py-2 2xl:flex focus-within:border-primary/50 transition-colors">
+                <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search"
-                  className="h-6 border-0 bg-transparent px-0 focus-visible:ring-0"
+                  className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 focus-visible:ring-0"
                 />
               </div>
               <Button type="button" variant={muted ? "secondary" : "ghost"} size="iconSm" onClick={() => setMuted((current) => !current)}>
