@@ -6,6 +6,8 @@ import { Shield, ArrowLeft, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { apiFetch } from "@/lib/api";
+
 type IdentityLog = {
   id: string;
   userId: string;
@@ -37,22 +39,14 @@ export default function IdentitiesAdminPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/platform-admin/identities", {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
-        }
-      });
-      if (res.status === 401 || res.status === 403) {
-        setError("Unauthorized. Platform Admin access required.");
-        setLoading(false);
-        return;
-      }
-      if (!res.ok) throw new Error("Failed to fetch logs");
-      
-      const data = await res.json();
+      const data = await apiFetch<{ logs: IdentityLog[] }>("/api/platform-admin/identities");
       setLogs(data.logs);
     } catch (err: any) {
-      setError(err.message);
+      if (err.message?.includes("Forbidden") || err.message?.includes("Platform Admin access required") || err.message?.includes("Unauthorized")) {
+        setError("Unauthorized. Platform Admin access required.");
+      } else {
+        setError(err.message || "Failed to fetch logs");
+      }
     } finally {
       setLoading(false);
     }
