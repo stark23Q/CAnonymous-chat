@@ -1,8 +1,8 @@
 [{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.vercel.c_anonymous_chat_web.twa",
-    "sha256_cert_fingerprints": ["FD:02:9D:80:7E:67:BB:F1:5B:77:BC:43:45:F1:37:0D:A6:6F:8E:B7:07:18:F6:D5:46:C2:71:65:D3:9F:91:B5"]
-  }
-}]
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.c_anonymous_chat_web.twa",
+        "sha256_cert_fingerprints": ["FD:02:9D:80:7E:67:BB:F1:5B:77:BC:43:45:F1:37:0D:A6:6F:8E:B7:07:18:F6:D5:46:C2:71:65:D3:9F:91:B5"]
+      }
+    }]
