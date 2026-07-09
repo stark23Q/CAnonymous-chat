@@ -193,6 +193,16 @@ export function AccessPortal({
             </TabsContent>
           </Tabs>
         </div>
+        
+        {/* Footer Links */}
+        <div className="mt-8 text-center flex flex-col items-center gap-2 animate-in fade-in duration-500 delay-300 fill-mode-both">
+          <div className="flex items-center gap-4 text-xs font-medium text-white/40">
+            <a href="/privacy" className="hover:text-white/80 transition-colors" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+            <span className="w-1 h-1 rounded-full bg-white/20" />
+            <a href="/terms" className="hover:text-white/80 transition-colors" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+          </div>
+          <p className="text-[10px] text-white/20">© {new Date().getFullYear()} NoTrace</p>
+        </div>
       </div>
 
       {error && (
