@@ -99,14 +99,14 @@ export default function PrivacyPolicyPage() {
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-white">6. Third-Party Services</h2>
           <p className="text-white/70 leading-relaxed text-sm">
-            We use Railway for hosting and infrastructure. We use Amazon S3-compatible storage for media files. These providers have their own privacy policies. We do not share identifiable user data with them beyond what is technically necessary to operate the service.
+            We use Vercel for hosting and Supabase/PostgreSQL for our database infrastructure. These providers have their own privacy policies. We do not share identifiable user data with them beyond what is technically necessary to operate the service.
           </p>
         </section>
 
         <section className="space-y-4">
           <h2 className="text-xl font-semibold text-white">7. Children&apos;s Privacy</h2>
           <p className="text-white/70 leading-relaxed text-sm">
-            NoTrace is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, please contact us and we will promptly delete it.
+            NoTrace is not intended for users under the age of 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, please contact us and we will promptly delete it. Any reports of child exploitation will result in immediate bans and will be reported to the authorities.
           </p>
         </section>
 
@@ -140,8 +140,8 @@ export default function PrivacyPolicyPage() {
           <h2 className="text-xl font-semibold text-white">10. Contact Us</h2>
           <p className="text-white/70 leading-relaxed text-sm">
             If you have questions about this Privacy Policy, please contact us at:{" "}
-            <a href="mailto:privacy@notrace.app" className="underline" style={{ color: "#8B4AFF" }}>
-              privacy@notrace.app
+            <a href="mailto:malhar.solanki@cerebulb.com" className="underline" style={{ color: "#8B4AFF" }}>
+              malhar.solanki@cerebulb.com
             </a>
           </p>
         </section>
