@@ -44,8 +44,9 @@ export function IdentityPanel({ currentUser, onRotate, onUpdateName, onClose, on
   return (
     <div
       className={cn(
-        "fixed bottom-20 right-4 z-50 w-72 rounded-xl border border-white/10 bg-black/80 shadow-2xl backdrop-blur-xl",
-        "ring-1 ring-white/5"
+        "fixed bottom-20 z-50 rounded-xl border border-white/10 bg-black/80 shadow-2xl backdrop-blur-xl",
+        "ring-1 ring-white/5",
+        "right-2 left-2 sm:left-auto sm:right-4 sm:w-72"
       )}
     >
       {/* Header */}

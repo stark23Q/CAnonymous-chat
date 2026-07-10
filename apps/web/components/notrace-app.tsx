@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Bell, BellOff, CircleDot, Ghost, Hash, Menu, MessageSquare, Plus, RefreshCw, Search, Settings, Shield, Sparkles, UserPlus, VenetianMask, Vote } from "lucide-react";
+import { AlertTriangle, Bell, BellOff, CircleDot, Ghost, Hash, Menu, MessageSquare, Plus, RefreshCw, Search, Settings, Shield, ShieldAlert, Sparkles, UserPlus, VenetianMask, Vote } from "lucide-react";
 import { ChannelList } from "@/components/chat/channel-list";
 import { Composer } from "@/components/chat/composer";
 import { ConfessionComposer } from "@/components/chat/confession-composer";
@@ -105,6 +105,9 @@ export function NoTraceApp() {
   const [showQA, setShowQA] = useState(false);
   const [showIdentity, setShowIdentity] = useState(false);
   const [identityLoading, setIdentityLoading] = useState(false);
+  
+  // Mobile Admin Toggle
+  const [showMobileAdmin, setShowMobileAdmin] = useState(false);
 
   // E2EE & Read Receipts States
   const {
@@ -857,7 +860,7 @@ export function NoTraceApp() {
           "grid min-w-0 min-h-0 grid-cols-[minmax(0,1fr)]",
           user?.role === "ADMIN" && "xl:grid-cols-[minmax(0,1fr)_344px]"
         )}>
-          <div className="flex min-w-0 min-h-0 flex-col bg-transparent">
+          <div className={cn("min-w-0 min-h-0 flex-col bg-transparent", showMobileAdmin ? "hidden xl:flex" : "flex")}>
             <header className="flex h-16 shrink-0 min-w-0 items-center gap-3 border-b border-white/5 glass-panel px-3 md:px-5">
               <Button
                 type="button"
@@ -898,10 +901,10 @@ export function NoTraceApp() {
                   className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 focus-visible:ring-0"
                 />
               </div>
-              <Button type="button" variant={muted ? "secondary" : "ghost"} size="iconSm" onClick={() => setMuted((current) => !current)}>
+              <Button type="button" variant={muted ? "secondary" : "ghost"} size="iconSm" className="shrink-0" onClick={() => setMuted((current) => !current)}>
                 {muted ? <BellOff className="h-4 w-4" aria-hidden /> : <Bell className="h-4 w-4" aria-hidden />}
               </Button>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center gap-1 overflow-x-auto scrollbar-thin">
                   <Button
                     type="button"
                     variant={showConfessions ? "secondary" : "ghost"}
@@ -911,6 +914,7 @@ export function NoTraceApp() {
                       setShowConfessions((v) => !v);
                       setShowPolls(false);
                       setShowQA(false);
+                      setShowMobileAdmin(false);
                     }}
                   >
                     <Ghost className="h-4 w-4" aria-hidden />
@@ -925,6 +929,7 @@ export function NoTraceApp() {
                       setShowPolls((v) => !v);
                       setShowConfessions(false);
                       setShowQA(false);
+                      setShowMobileAdmin(false);
                     }}
                   >
                     <Vote className="h-4 w-4" aria-hidden />
@@ -944,11 +949,29 @@ export function NoTraceApp() {
                       setShowQA((v) => !v);
                       setShowPolls(false);
                       setShowConfessions(false);
+                      setShowMobileAdmin(false);
                     }}
                   >
                     <MessageSquare className="h-4 w-4" aria-hidden />
                     <span className="hidden sm:inline">Q&A</span>
                   </Button>
+                  {user?.role === "ADMIN" && (
+                    <Button
+                      type="button"
+                      variant={showMobileAdmin ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-8 gap-1.5 px-2 sm:px-3 xl:hidden shrink-0"
+                      onClick={() => {
+                        setShowMobileAdmin((v) => !v);
+                        setShowPolls(false);
+                        setShowQA(false);
+                        setShowConfessions(false);
+                      }}
+                    >
+                      <ShieldAlert className="h-4 w-4" aria-hidden />
+                      <span className="hidden sm:inline">Admin</span>
+                    </Button>
+                  )}
                 </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -956,8 +979,8 @@ export function NoTraceApp() {
                     type="button" 
                     variant={showIdentity ? "secondary" : "outline"} 
                     size="sm" 
-                    onClick={() => { setShowIdentity((v) => !v); setShowPolls(false); setShowQA(false); setShowConfessions(false); }}
-                    className="gap-2 border-primary/50 text-primary shadow-[0_0_15px_-3px] shadow-primary/30"
+                    onClick={() => { setShowIdentity((v) => !v); setShowPolls(false); setShowQA(false); setShowConfessions(false); setShowMobileAdmin(false); }}
+                    className="gap-2 border-primary/50 text-primary shadow-[0_0_15px_-3px] shadow-primary/30 shrink-0"
                   >
                     <VenetianMask className="h-4 w-4" aria-hidden />
                     <span className="hidden sm:inline">Identity</span>
@@ -1117,6 +1140,7 @@ export function NoTraceApp() {
                     onSend={sendMessage}
                     onConfess={postConfession}
                     forceConfessionMode={showConfessions}
+                    groupId={selectedCommunity?.id ?? ""}
                   />
                 </div>
               )}
@@ -1125,6 +1149,7 @@ export function NoTraceApp() {
 
           {user?.role === "ADMIN" && (
             <AdminPanel
+              className={showMobileAdmin ? "block w-full border-none" : "hidden xl:block"}
               community={selectedCommunity}
               requests={requests}
               members={members}

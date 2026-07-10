@@ -64,26 +64,26 @@ export default function IdentitiesAdminPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/")}>
+    <div className="min-h-screen bg-background text-foreground p-4 sm:p-8 overflow-y-auto">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.push("/")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold tracking-tight">Global Identity Tracker</h1>
+            <div className="flex items-center gap-2 min-w-0">
+              <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-primary shrink-0" />
+              <h1 className="text-lg sm:text-2xl font-bold tracking-tight truncate">Global Identity Tracker</h1>
             </div>
           </div>
-          <Button onClick={fetchLogs} disabled={loading} variant="outline" size="sm">
+          <Button onClick={fetchLogs} disabled={loading} variant="outline" size="sm" className="self-end sm:self-auto shrink-0">
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         </div>
 
-        <div className="flex items-center px-3 py-2 bg-muted/50 rounded-lg border border-border max-w-sm">
-          <Search className="h-4 w-4 text-muted-foreground mr-2" />
+        <div className="flex items-center px-3 py-2 bg-muted/50 rounded-lg border border-border max-w-full sm:max-w-sm">
+          <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
           <Input 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -98,15 +98,15 @@ export default function IdentitiesAdminPage() {
           </div>
         ) : (
           <div className="rounded-md border border-border bg-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full text-sm text-left min-w-[640px]">
                 <thead className="text-xs text-muted-foreground uppercase bg-muted/50">
                   <tr>
-                    <th className="px-6 py-4 font-medium">Time</th>
-                    <th className="px-6 py-4 font-medium">User ID (Real)</th>
-                    <th className="px-6 py-4 font-medium">Group</th>
-                    <th className="px-6 py-4 font-medium">Action</th>
-                    <th className="px-6 py-4 font-medium">Identity Change</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-medium">Time</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-medium">User ID (Real)</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-medium">Group</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-medium">Action</th>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 font-medium">Identity Change</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -125,7 +125,7 @@ export default function IdentitiesAdminPage() {
                   ) : (
                     filteredLogs.map((log) => (
                       <tr key={log.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-muted-foreground text-xs sm:text-sm">
                           {new Intl.DateTimeFormat("en-US", {
                             month: "short",
                             day: "numeric",
@@ -134,30 +134,30 @@ export default function IdentitiesAdminPage() {
                             second: "2-digit"
                           }).format(new Date(log.createdAt))}
                         </td>
-                        <td className="px-6 py-4 font-mono text-xs text-primary/80">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-mono text-[10px] sm:text-xs text-primary/80 max-w-[120px] truncate">
                           {log.user.id}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
                           {log.group ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary/50 text-secondary-foreground text-xs font-medium">
+                            <span className="inline-flex items-center px-2 py-1 rounded-md bg-secondary/50 text-secondary-foreground text-xs font-medium truncate max-w-[100px]">
                               {log.group.name}
                             </span>
                           ) : (
                             <span className="text-muted-foreground italic text-xs">Global</span>
                           )}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="text-xs font-semibold tracking-wider text-muted-foreground">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <span className="text-[10px] sm:text-xs font-semibold tracking-wider text-muted-foreground">
                             {log.action}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
                             {log.oldName ? (
                               <>
-                                <span className="line-through text-muted-foreground">{log.oldName}</span>
-                                <span className="text-muted-foreground">→</span>
-                                <span className="font-semibold text-foreground">{log.newName}</span>
+                                <span className="line-through text-muted-foreground truncate max-w-[60px] sm:max-w-none">{log.oldName}</span>
+                                <span className="text-muted-foreground shrink-0">→</span>
+                                <span className="font-semibold text-foreground truncate max-w-[60px] sm:max-w-none">{log.newName}</span>
                               </>
                             ) : (
                               <span className="font-semibold text-foreground">{log.newName}</span>

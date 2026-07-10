@@ -20,15 +20,9 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { EmojiPicker } from "@/components/chat/emoji-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { MemePicker } from "@/components/chat/meme-picker";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
 
 const EXPIRY_OPTIONS: { label: string; seconds: number | null }[] = [
   { label: "No self-destruct", seconds: null },
@@ -38,8 +32,6 @@ const EXPIRY_OPTIONS: { label: string; seconds: number | null }[] = [
   { label: "7 days", seconds: 604_800 }
 ];
 
-
-
 export function Composer({
   channelName,
   replyTo,
@@ -47,7 +39,8 @@ export function Composer({
   onSend,
   onConfess,
   onTyping,
-  forceConfessionMode
+  forceConfessionMode,
+  groupId
 }: {
   channelName: string;
   replyTo: ChatMessage | null;
@@ -56,13 +49,14 @@ export function Composer({
   onConfess?: (content: string) => void;
   onTyping: (isTyping: boolean) => void;
   forceConfessionMode?: boolean;
+  groupId: string;
 }) {
   const [value, setValue] = useState("");
   const [dragging, setDragging] = useState(false);
   const [isConfessionState, setIsConfessionState] = useState(false);
   const [expiresInSeconds, setExpiresInSeconds] = useState<number | null>(null);
-  const [isMemeDialogOpen, setIsMemeDialogOpen] = useState(false);
-  const [memeUrlInput, setMemeUrlInput] = useState("");
+  const [memeOpen, setMemeOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const typingTimeout = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -87,29 +81,64 @@ export function Composer({
       onSend(content || (kind === "MEME" ? "Shared a meme" : "Shared a file"), kind, expiresInSeconds);
       setValue("");
       onTyping(false);
-      // Keep the timer preference between sends — user opted in deliberately
     },
     [onSend, onConfess, isConfession, onTyping, value, expiresInSeconds]
   );
 
-  const submitMemeUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (memeUrlInput.trim()) {
-      onSend(memeUrlInput.trim(), "MEME", expiresInSeconds);
-      setIsMemeDialogOpen(false);
-      setMemeUrlInput("");
-    }
+  const handleMemeSelect = (url: string) => {
+    send("MEME", url);
+    setMemeOpen(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File is too large! Maximum size is 5MB.");
+    if (file.size > 25 * 1024 * 1024) {
+      alert("File is too large! Maximum size is 25MB.");
       return;
     }
 
+    setIsUploading(true);
+    
+    try {
+      // 1. Try to get a presigned URL from our API (requires S3/Supabase configured)
+      const { upload } = await apiFetch<{ upload: { objectKey: string; uploadUrl: string; publicUrl: string | null; expiresInSeconds: number } }>("/api/messages/media/presign", {
+        method: "POST",
+        body: JSON.stringify({
+          groupId,
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          size: file.size
+        })
+      });
+        
+      // 2. Upload directly to Supabase Storage / S3
+      const uploadRes = await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file
+      });
+
+      if (uploadRes.ok && upload.publicUrl) {
+        // 3. Send message with the public URL
+        onSend(upload.publicUrl, "FILE", expiresInSeconds, {
+          size: file.size,
+          mime: file.type || "application/octet-stream",
+          name: file.name
+        });
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+    } catch (err) {
+      console.warn("Direct upload failed or not configured, falling back to Base64.");
+    } finally {
+      setIsUploading(false);
+    }
+
+    // FALLBACK: Read as Base64 if cloud storage fails or isn't set up
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
@@ -118,6 +147,7 @@ export function Composer({
         mime: file.type || "application/octet-stream",
         name: file.name
       });
+      setIsUploading(false);
     };
     reader.readAsDataURL(file);
 
@@ -218,27 +248,41 @@ export function Composer({
             <div className="flex items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => fileInputRef.current?.click()}>
-                    <FileUp className="h-4 w-4" aria-hidden />
+                  <Button type="button" variant="ghost" size="iconSm" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
+                    <FileUp className={cn("h-4 w-4", isUploading && "animate-pulse text-primary")} aria-hidden />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Upload file</TooltipContent>
+                <TooltipContent>{isUploading ? "Uploading..." : "Upload file or image"}</TooltipContent>
               </Tooltip>
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="image/*,application/pdf,text/plain"
+                accept="image/*,video/mp4,application/pdf,text/plain"
               />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button type="button" variant="ghost" size="iconSm" onClick={() => setIsMemeDialogOpen(true)}>
-                    <ImageIcon className="h-4 w-4" aria-hidden />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Attach image URL</TooltipContent>
-              </Tooltip>
+              
+              <Popover open={memeOpen} onOpenChange={setMemeOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="ghost" size="iconSm">
+                        <ImageIcon className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>Search Memes / GIFs</TooltipContent>
+                </Tooltip>
+                <PopoverContent
+                  align="start"
+                  side="top"
+                  sideOffset={8}
+                  className="w-auto p-0 border-0 bg-transparent shadow-none"
+                >
+                  <MemePicker onSelect={handleMemeSelect} />
+                </PopoverContent>
+              </Popover>
+
               <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -326,7 +370,7 @@ export function Composer({
               type="button" 
               size="sm" 
               onClick={() => send()} 
-              disabled={!value.trim()} 
+              disabled={!value.trim() || isUploading} 
               className={cn(
                 "rounded-full transition-all",
                 isConfession ? "bg-violet-600 hover:bg-violet-500 shadow-[0_0_15px_-3px] shadow-violet-500/50" : "shadow-[0_0_15px_-3px] shadow-primary/40 hover:shadow-primary/60"
@@ -338,28 +382,6 @@ export function Composer({
           </div>
         </div>
       </div>
-
-      {/* Meme URL Dialog */}
-      <Dialog open={isMemeDialogOpen} onOpenChange={setIsMemeDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-black/90 border-white/10 backdrop-blur-xl">
-          <DialogHeader>
-            <DialogTitle>Send an Image</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={submitMemeUrl} className="flex flex-col gap-4 mt-4">
-            <Input
-              placeholder="Paste an image URL (e.g., https://.../image.png)"
-              value={memeUrlInput}
-              onChange={(e) => setMemeUrlInput(e.target.value)}
-              className="bg-black/50 border-white/10"
-              autoFocus
-            />
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsMemeDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={!memeUrlInput.trim()}>Send Image</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 export type AdminReport = {
   id: string;
@@ -38,7 +39,8 @@ export function AdminPanel({
   reports,
   onReviewReport,
   adminUsers,
-  onLoadAdminUsers
+  onLoadAdminUsers,
+  className
 }: {
   community: Community;
   requests: JoinRequest[];
@@ -60,11 +62,12 @@ export function AdminPanel({
   onReviewReport: (reportId: string, action: "DISMISSED" | "ACTIONED") => void;
   adminUsers?: AdminUser[] | null;
   onLoadAdminUsers?: () => void;
+  className?: string;
 }) {
   const openReports = reports.filter((r) => r.status === "OPEN");
 
   return (
-    <aside className="hidden h-full min-h-0 w-[344px] shrink-0 border-l border-white/5 glass-panel xl:block">
+    <aside className={cn("hidden h-full min-h-0 w-full xl:w-[344px] shrink-0 border-l border-white/5 glass-panel xl:block", className)}>
       <div className="flex min-h-0 h-full flex-col">
         <div className="border-b border-white/5 px-4 py-4">
           <div className="flex items-center justify-between gap-3">

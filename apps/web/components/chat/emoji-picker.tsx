@@ -400,7 +400,7 @@ export function EmojiPicker({
 
   return (
     <div className={cn(
-      "flex flex-col w-[320px] h-[400px] rounded-xl border border-white/10 bg-[#1a1a2e]/95 backdrop-blur-xl shadow-2xl overflow-hidden",
+      "flex flex-col w-[280px] sm:w-[320px] h-[350px] sm:h-[400px] rounded-xl border border-white/10 bg-[#1a1a2e]/95 backdrop-blur-xl shadow-2xl overflow-hidden",
       className
     )}>
       {/* Search */}
