@@ -16,13 +16,20 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
       const apiKey = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
       if (!apiKey) {
         console.warn("No Giphy API key found. Please set NEXT_PUBLIC_GIPHY_API_KEY");
+        setMemes([]);
+        return;
       }
       
       const endpoint = searchQuery.trim() 
-        ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey || "GlVGYHqc3SyCE34XhI8I2Vl954ZkH0aT"}&q=${encodeURIComponent(searchQuery)}&limit=20&rating=g`
-        : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey || "GlVGYHqc3SyCE34XhI8I2Vl954ZkH0aT"}&limit=20&rating=g`;
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(searchQuery)}&limit=20&rating=g`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=20&rating=g`;
 
       const res = await fetch(endpoint);
+      if (!res.ok) {
+        console.error("Giphy API error:", res.status);
+        setMemes([]);
+        return;
+      }
       const data = await res.json();
       
       if (data.data) {

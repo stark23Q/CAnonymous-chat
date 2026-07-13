@@ -403,16 +403,18 @@ export function NoTraceApp() {
       }
     }
 
+    const isImageFile = kind === "FILE" && fileMeta?.mime?.startsWith("image/");
+
     const payload = {
       groupId: selectedCommunity.id,
       channelId: selectedChannel.id,
-      content: kind === "MEME" ? "Shared an image" : finalContent,
-      messageType: kind,
+      content: kind === "MEME" ? "Shared an image" : isImageFile ? "Shared an image" : finalContent,
+      messageType: kind === "FILE" && isImageFile ? "IMAGE" as const : kind,
       mediaUrl:
-        kind === "MEME"
+        kind === "MEME" || isImageFile
           ? content
           : undefined,
-      mediaMime: kind === "FILE" ? fileMeta?.mime || "application/octet-stream" : kind === "MEME" ? "image/jpeg" : undefined,
+      mediaMime: kind === "FILE" ? fileMeta?.mime || "application/octet-stream" : kind === "MEME" ? "image/gif" : undefined,
       mediaSize: kind === "FILE" ? fileMeta?.size || 0 : kind === "MEME" ? 420_000 : undefined,
       replyToId: replyTo?.id,
       expiresInSeconds: expiresInSeconds ?? undefined,

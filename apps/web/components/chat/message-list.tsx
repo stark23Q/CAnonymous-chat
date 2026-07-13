@@ -164,14 +164,15 @@ export function MessageList({
                     <p className="mt-2 text-sm italic text-muted-foreground">Message removed</p>
                   ) : (
                     <>
-                      {message.content && message.messageType !== "FILE" ? <div className="mt-2 inline-block rounded-2xl rounded-tl-sm bg-gradient-to-br from-primary/20 to-secondary/20 px-4 py-2 shadow-sm border border-white/5"><p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{message.content}</p></div> : null}
+                      {message.content && message.messageType !== "FILE" && message.messageType !== "IMAGE" && message.messageType !== "MEME" && message.messageType !== "GIF" ? <div className="mt-2 inline-block rounded-2xl rounded-tl-sm bg-gradient-to-br from-primary/20 to-secondary/20 px-4 py-2 shadow-sm border border-white/5"><p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{message.content}</p></div> : null}
                       {message.messageType === "MEME" || message.messageType === "IMAGE" || message.messageType === "GIF" ? (
                         <div className="mt-3 overflow-hidden rounded-md border border-border bg-card">
-                          {message.mediaUrl ? (
+                          {(message.mediaUrl || (message.content && message.content.startsWith("data:"))) ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              alt={message.content ?? "Shared media"}
-                              src={message.mediaUrl}
-                              className="aspect-video w-full max-w-lg object-cover"
+                              alt={message.content?.startsWith("data:") ? "Shared image" : (message.content ?? "Shared media")}
+                              src={message.mediaUrl || message.content || ""}
+                              className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           ) : (
                             <div className="grid aspect-video max-w-lg place-items-center bg-muted">
@@ -181,6 +182,16 @@ export function MessageList({
                         </div>
                       ) : null}
                       {message.messageType === "FILE" ? (
+                        message.mediaMime?.startsWith("image/") ? (
+                          <div className="mt-3 overflow-hidden rounded-md border border-border bg-card">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              alt="Shared image"
+                              src={message.mediaUrl || message.content || ""}
+                              className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
+                            />
+                          </div>
+                        ) : (
                         <a href={message.content ?? "#"} download="shared-document" className="mt-3 flex max-w-md items-center gap-3 rounded-lg border border-white/10 bg-black/40 p-3 shadow-sm transition-colors hover:bg-black/60 hover:border-primary/50 cursor-pointer">
                           <div className="grid h-10 w-10 place-items-center rounded bg-primary/20 text-primary shadow-[0_0_10px_-2px] shadow-primary/30">
                             <FileText className="h-5 w-5" aria-hidden />
@@ -192,6 +203,7 @@ export function MessageList({
                             </div>
                           </div>
                         </a>
+                        )
                       ) : null}
                     </>
                   )}
