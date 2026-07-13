@@ -13,25 +13,24 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
   const fetchMemes = async (searchQuery: string) => {
     setLoading(true);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_TENOR_API_KEY;
+      const apiKey = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
       if (!apiKey) {
-        // Fallback for development if no key is provided
-        console.warn("No Tenor API key found. Please set NEXT_PUBLIC_TENOR_API_KEY");
+        console.warn("No Giphy API key found. Please set NEXT_PUBLIC_GIPHY_API_KEY");
       }
       
       const endpoint = searchQuery.trim() 
-        ? `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchQuery)}&key=${apiKey || "LIVDSRZULELA"}&client_key=notrace&limit=20`
-        : `https://tenor.googleapis.com/v2/featured?key=${apiKey || "LIVDSRZULELA"}&client_key=notrace&limit=20`;
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey || "GlVGYHqc3SyCE34XhI8I2Vl954ZkH0aT"}&q=${encodeURIComponent(searchQuery)}&limit=20&rating=g`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey || "GlVGYHqc3SyCE34XhI8I2Vl954ZkH0aT"}&limit=20&rating=g`;
 
       const res = await fetch(endpoint);
       const data = await res.json();
       
-      if (data.results) {
+      if (data.data) {
         setMemes(
-          data.results.map((r: any) => ({
+          data.data.map((r: any) => ({
             id: r.id,
-            url: r.media_formats.gif.url,
-            preview: r.media_formats.tinygif.url,
+            url: r.images.original.url,
+            preview: r.images.fixed_height_small.url,
           }))
         );
       }
@@ -63,7 +62,7 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
         <Input 
           value={query}
           onChange={handleSearch}
-          placeholder="Search Tenor GIFs..." 
+          placeholder="Search GIPHY GIFs..." 
           className="pl-9 h-9 bg-white/5 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 text-sm"
         />
       </div>
@@ -93,7 +92,7 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
         )}
       </div>
       <div className="p-1.5 border-t border-white/5 text-center bg-black">
-        <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Powered by Tenor</span>
+        <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">Powered by GIPHY</span>
       </div>
     </div>
   );
