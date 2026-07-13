@@ -173,6 +173,7 @@ export function MessageList({
                               <img
                                 alt={message.content?.startsWith("data:") ? "Shared image" : (message.content ?? "Shared media")}
                                 src={message.mediaUrl || message.content || ""}
+                                referrerPolicy="no-referrer"
                                 className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                                 onError={(e) => {
                                   const target = e.currentTarget;
