@@ -29,4 +29,4 @@ WORKDIR /app/apps/api
 
 # Run Prisma migrations before starting the server
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/index.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/src/index.js"]
