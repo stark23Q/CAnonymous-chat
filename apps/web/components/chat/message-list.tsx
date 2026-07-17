@@ -168,33 +168,16 @@ export function MessageList({
                       {message.messageType === "MEME" || message.messageType === "IMAGE" || message.messageType === "GIF" ? (
                         <div className="mt-3 overflow-hidden rounded-md border border-border bg-card">
                           {(message.mediaUrl || (message.content && message.content.startsWith("data:"))) ? (
-                            <>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                alt={message.content?.startsWith("data:") ? "Shared image" : (message.content ?? "Shared media")}
-                                src={message.mediaUrl || message.content || ""}
-                                referrerPolicy="no-referrer"
-                                className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
-                                onError={(e) => {
-                                  const target = e.currentTarget;
-                                  if (target.dataset.retried) return;
-                                  target.dataset.retried = "true";
-                                  // Retry with a cache-busting parameter
-                                  const src = target.src;
-                                  if (src && !src.startsWith("data:")) {
-                                    target.src = src + (src.includes("?") ? "&" : "?") + "retry=1";
-                                  }
-                                }}
-                              />
-                              {/* Temporary debug: show URL status */}
-                              <p className="px-2 py-1 text-[9px] text-muted-foreground/50 truncate max-w-lg">
-                                type={message.messageType} | url={message.mediaUrl ? message.mediaUrl.substring(0, 80) + "..." : "NULL"}
-                              </p>
-                            </>
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              alt="Shared media"
+                              src={message.mediaUrl || message.content || ""}
+                              referrerPolicy="no-referrer"
+                              className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
+                            />
                           ) : (
                             <div className="grid aspect-video max-w-lg place-items-center bg-muted">
                               <ImageIcon className="h-8 w-8 text-muted-foreground" aria-hidden />
-                              <p className="mt-1 text-[9px] text-muted-foreground">No media URL | type={message.messageType} | content={message.content?.substring(0, 40)}</p>
                             </div>
                           )}
                         </div>
@@ -206,6 +189,7 @@ export function MessageList({
                             <img
                               alt="Shared image"
                               src={message.mediaUrl || message.content || ""}
+                              referrerPolicy="no-referrer"
                               className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           </div>

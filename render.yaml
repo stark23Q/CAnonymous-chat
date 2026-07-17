@@ -1,0 +1,41 @@
+# Render Blueprint — NoTrace API
+# Deploy via: https://render.com/deploy
+# This creates a Web Service (API + WebSockets) and a PostgreSQL database.
+databases:
+  - name: notrace-db
+    plan: free
+    databaseName: notrace
+    user: notrace
+
+services:
+  - type: web
+    name: notrace-api
+    runtime: docker
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: APP_ORIGIN
+        value: https://c-anonymous-chat-web.vercel.app
+      - key: API_PUBLIC_URL
+        fromRender: true
+        property: hostURL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: notrace-db
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: TOKEN_HASH_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+      - key: MAGIC_LINK_DEV_MODE
+        value: "true"
+    healthCheckPath: /healthz
