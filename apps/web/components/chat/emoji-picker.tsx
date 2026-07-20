@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { Search, X, Clock, Smile, Heart, Coffee, Plane, Lightbulb, Flag, Hash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -347,7 +347,11 @@ export function EmojiPicker({
   const [activeCategory, setActiveCategory] = useState("smileys");
   const scrollRef = useRef<HTMLDivElement>(null);
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [frequentEmojis, setFrequentEmojis] = useState(getFrequentEmojis);
+  const [frequentEmojis, setFrequentEmojis] = useState<string[]>([]);
+
+  useEffect(() => {
+    setFrequentEmojis(getFrequentEmojis());
+  }, []);
 
   const handleSelect = useCallback((emoji: string) => {
     saveFrequentEmoji(emoji);
