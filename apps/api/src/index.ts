@@ -39,29 +39,7 @@ app.use("/api/messages", messageRoutes());
 app.use("/api/notifications", notificationRoutes());
 app.use("/api/platform-admin", platformAdminRoutes());
 
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-const server = http.createServer(app);
-const stopRetentionSweeper = startRetentionSweeper();
-
-try {
-  logger.info("Database startup migrations check bypassed (managed via prisma migrate deploy).");
-} catch (dbErr) {
-  logger.error({ err: dbErr }, "Database startup migrations check failed.");
-}
-
-await setupRealtime(server);
-
-app.get("/api/health-db", async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json({ users, count: users.length });
-  } catch (error) {
-    res.status(500).json({ error: String(error) });
-  }
-});
-
+let seedError: string | null = null;
 try {
   const existingAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
   if (!existingAdmin) {
@@ -76,8 +54,32 @@ try {
     logger.info("Auto-seeded admin user on startup.");
   }
 } catch (err) {
+  seedError = String(err);
   logger.error(err, "Failed to auto-seed admin");
 }
+
+app.get("/api/health-db", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json({ users, count: users.length, seedError });
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
+});
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const server = http.createServer(app);
+const stopRetentionSweeper = startRetentionSweeper();
+
+try {
+  logger.info("Database startup migrations check bypassed (managed via prisma migrate deploy).");
+} catch (dbErr) {
+  logger.error({ err: dbErr }, "Database startup migrations check failed.");
+}
+
+await setupRealtime(server);
 
 server.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, "NoTrace API listening");
