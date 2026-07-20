@@ -27,6 +27,6 @@ COPY --from=build /app/apps/api/prisma ./apps/api/prisma
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 WORKDIR /app/apps/api
 
-# Run Prisma migrations before starting the server
+# Run Prisma migrations and seed before starting the server
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node dist/src/index.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run seed && node dist/src/index.js"]
