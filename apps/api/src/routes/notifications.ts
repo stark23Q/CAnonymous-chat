@@ -8,11 +8,15 @@ const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "public_key_here";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "private_key_here";
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:test@test.com";
 
-webpush.setVapidDetails(
-  VAPID_SUBJECT,
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY
-);
+try {
+  webpush.setVapidDetails(
+    VAPID_SUBJECT,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+} catch (err) {
+  console.warn("Push notifications disabled: Invalid or missing VAPID keys. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in your environment.");
+}
 
 export function notificationRoutes(): Router {
   const router = express.Router();
