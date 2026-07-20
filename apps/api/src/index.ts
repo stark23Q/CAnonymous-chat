@@ -53,6 +53,15 @@ try {
 
 await setupRealtime(server);
 
+app.get("/api/health-db", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json({ users, count: users.length });
+  } catch (error) {
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 try {
   const existingAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
   if (!existingAdmin) {
