@@ -127,15 +127,18 @@ export function NoTraceApp() {
 
   // Settings & Theme states
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window === "undefined") return "dark";
-    return window.localStorage.getItem("notrace_theme") || "dark";
-  });
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === "undefined") return true;
-    const stored = window.localStorage.getItem("notrace_sound");
-    return stored === null ? true : stored === "true";
-  });
+  const [theme, setTheme] = useState("dark");
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedTheme = window.localStorage.getItem("notrace_theme");
+      if (storedTheme) setTheme(storedTheme);
+      
+      const storedSound = window.localStorage.getItem("notrace_sound");
+      if (storedSound !== null) setSoundEnabled(storedSound === "true");
+    }
+  }, []);
 
   // Refs for socket events to avoid dependency thrashing
   const soundEnabledRef = useRef(soundEnabled);

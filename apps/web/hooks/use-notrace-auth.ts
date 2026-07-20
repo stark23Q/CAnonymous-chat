@@ -3,9 +3,7 @@ import { apiFetch } from "@/lib/api";
 import type { NoTraceUser } from "@/lib/types";
 
 export function useNoTraceAuth({ fallbackNotice }: { fallbackNotice: string }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : window.localStorage.getItem("notrace_access")
-  );
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<NoTraceUser | null>(null);
   const [welcomePhrase, setWelcomePhrase] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
