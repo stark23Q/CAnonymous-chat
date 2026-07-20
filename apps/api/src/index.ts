@@ -53,6 +53,23 @@ try {
 
 await setupRealtime(server);
 
+try {
+  const existingAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+  if (!existingAdmin) {
+    await prisma.user.create({
+      data: {
+        id: "notrace-admin",
+        anonymousName: "RootCipher",
+        avatarSeed: "demo-seed",
+        role: "ADMIN"
+      }
+    });
+    logger.info("Auto-seeded admin user on startup.");
+  }
+} catch (err) {
+  logger.error(err, "Failed to auto-seed admin");
+}
+
 server.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, "NoTrace API listening");
 });
