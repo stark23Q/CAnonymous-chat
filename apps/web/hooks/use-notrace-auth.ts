@@ -47,10 +47,10 @@ export function useNoTraceAuth({ fallbackNotice }: { fallbackNotice: string }) {
           }
         }
 
-        if (!token) {
-          if (active) {
-            setLoading(false);
-          }
+        if (active) {
+          setTimeout(() => {
+            if (active) setLoading(false);
+          }, 0);
         }
       } catch {
         if (active) {

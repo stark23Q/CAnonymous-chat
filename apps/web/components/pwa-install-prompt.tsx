@@ -15,11 +15,12 @@ export function PwaInstallPrompt() {
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Check if already installed as standalone
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-    setIsStandalone(standalone);
+    setTimeout(() => {
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+      setIsStandalone(standalone);
+    }, 0);
 
     // Check iOS
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);

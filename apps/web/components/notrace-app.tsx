@@ -132,11 +132,13 @@ export function NoTraceApp() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedTheme = window.localStorage.getItem("notrace_theme");
-      if (storedTheme) setTheme(storedTheme);
-      
-      const storedSound = window.localStorage.getItem("notrace_sound");
-      if (storedSound !== null) setSoundEnabled(storedSound === "true");
+      setTimeout(() => {
+        const storedTheme = window.localStorage.getItem("notrace_theme");
+        if (storedTheme) setTheme(storedTheme);
+        
+        const storedSound = window.localStorage.getItem("notrace_sound");
+        if (storedSound !== null) setSoundEnabled(storedSound === "true");
+      }, 0);
     }
   }, []);
 
