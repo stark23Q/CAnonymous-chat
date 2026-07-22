@@ -94,6 +94,11 @@ export function NoTraceApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [muted, setMuted] = useState(false);
 
+  // Clear stale invite state when switching communities
+  useEffect(() => {
+    setLatestInvite(null);
+  }, [selectedCommunityId]);
+
   // Phase 2 — Polls & Confessions
   const [polls, setPolls] = useState<Poll[]>([]);
   const [showPolls, setShowPolls] = useState(false);
