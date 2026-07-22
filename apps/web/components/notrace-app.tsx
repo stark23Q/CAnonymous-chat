@@ -270,13 +270,7 @@ export function NoTraceApp() {
     }
   }, [selectedChannel?.id, messages.length, sendReadReceipt]);
 
-  if (!selectedCommunity || !selectedChannel) {
-    return (
-      <div className="grid h-dvh place-items-center bg-background text-sm text-muted-foreground">
-        {loading ? "Opening NoTrace..." : notice}
-      </div>
-    );
-  }
+
 
   const selectCommunity = (community: Community) => {
     setSelectedCommunityId(community.id);
@@ -755,6 +749,14 @@ export function NoTraceApp() {
       setNotice(error instanceof Error ? error.message : "Member action failed.");
     }
   };
+
+  if (!selectedCommunity || !selectedChannel) {
+    return (
+      <div className="grid h-dvh place-items-center bg-background text-sm text-muted-foreground">
+        {loading ? "Opening NoTrace..." : notice}
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
