@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Flag, ImageIcon, Reply, Timer, Trash2, X } from "lucide-react";
 import type { ChatMessage } from "@/lib/types";
 import { AnonymousAvatar } from "@/components/anonymous-avatar";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -168,10 +169,12 @@ export function MessageList({
                       {message.messageType === "MEME" || message.messageType === "IMAGE" || message.messageType === "GIF" ? (
                         <div className="mt-3 overflow-hidden rounded-md border border-border bg-card">
                           {(message.mediaUrl || (message.content && message.content.startsWith("data:"))) ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
+                            <Image
                               alt="Shared media"
                               src={message.mediaUrl || message.content || ""}
+                              width={400}
+                              height={400}
+                              unoptimized={false}
                               className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           ) : (
@@ -184,10 +187,12 @@ export function MessageList({
                       {message.messageType === "FILE" ? (
                         message.mediaMime?.startsWith("image/") ? (
                           <div className="mt-3 overflow-hidden rounded-md border border-border bg-card">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <Image
                               alt="Shared image"
                               src={message.mediaUrl || message.content || ""}
+                              width={400}
+                              height={400}
+                              unoptimized={false}
                               className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           </div>

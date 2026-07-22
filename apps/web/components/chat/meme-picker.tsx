@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -173,11 +174,12 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
                 onClick={() => onSelect(meme.url)}
                 className="w-full mb-1.5 relative rounded-lg overflow-hidden bg-white/5 hover:ring-2 hover:ring-primary/60 hover:scale-[1.02] transition-all focus:outline-none break-inside-avoid group"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={meme.preview}
                   alt="GIF"
-                  loading="lazy"
+                  width={meme.width}
+                  height={meme.height}
+                  unoptimized={false}
                   className="w-full object-cover"
                   style={{ aspectRatio: `${meme.width}/${meme.height}` }}
                 />
