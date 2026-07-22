@@ -21,5 +21,5 @@ export function errorHandler(error: unknown, _req: Request, res: Response, _next
   }
 
   logger.error({ error }, "request failed");
-  res.status(500).json({ error: "Internal server error." });
+  res.status(500).json({ error: error instanceof Error ? error.message : "Internal server error." });
 }
