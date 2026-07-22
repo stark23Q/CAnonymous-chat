@@ -57,14 +57,22 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
       const data = await res.json();
 
       if (data.data) {
-        const newMemes = data.data.map((r: any) => ({
-          id: r.id,
-          // Use permanent URL that won't expire (no CID token)
-          url: giphyMediaUrl(r.id, "giphy.gif"),
-          preview: giphyMediaUrl(r.id, "200w.gif"),
-          width: parseInt(r.images?.fixed_width?.width || "200", 10),
-          height: parseInt(r.images?.fixed_width?.height || "150", 10),
-        }));
+        const newMemes = data.data.map((r: any) => {
+          let url = r.images?.original?.url || giphyMediaUrl(r.id, "giphy.gif");
+          let preview = r.images?.fixed_width?.url || giphyMediaUrl(r.id, "200w.gif");
+
+          // Strip query params to make it permanent (avoids cid expiration)
+          if (url.includes('?')) url = url.split('?')[0];
+          if (preview.includes('?')) preview = preview.split('?')[0];
+
+          return {
+            id: r.id,
+            url,
+            preview,
+            width: parseInt(r.images?.fixed_width?.width || "200", 10),
+            height: parseInt(r.images?.fixed_width?.height || "150", 10),
+          };
+        });
 
         setMemes((prev) => (append ? [...prev, ...newMemes] : newMemes));
         setHasMore(data.data.length >= PAGE_SIZE);
