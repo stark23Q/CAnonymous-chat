@@ -172,7 +172,6 @@ export function MessageList({
                             <img
                               alt="Shared media"
                               src={message.mediaUrl || message.content || ""}
-                              referrerPolicy="no-referrer"
                               className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           ) : (
@@ -189,7 +188,6 @@ export function MessageList({
                             <img
                               alt="Shared image"
                               src={message.mediaUrl || message.content || ""}
-                              referrerPolicy="no-referrer"
                               className="max-h-[400px] w-auto max-w-full object-contain rounded-md"
                             />
                           </div>

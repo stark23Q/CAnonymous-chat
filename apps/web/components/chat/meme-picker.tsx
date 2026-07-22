@@ -178,7 +178,6 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
                   src={meme.preview}
                   alt="GIF"
                   loading="lazy"
-                  referrerPolicy="no-referrer"
                   className="w-full object-cover"
                   style={{ aspectRatio: `${meme.width}/${meme.height}` }}
                 />
