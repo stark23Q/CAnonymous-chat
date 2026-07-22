@@ -61,10 +61,6 @@ export function MemePicker({ onSelect }: { onSelect: (url: string) => void }) {
           let url = r.images?.original?.url || giphyMediaUrl(r.id, "giphy.gif");
           let preview = r.images?.fixed_width?.url || giphyMediaUrl(r.id, "200w.gif");
 
-          // Strip query params to make it permanent (avoids cid expiration)
-          if (url.includes('?')) url = url.split('?')[0];
-          if (preview.includes('?')) preview = preview.split('?')[0];
-
           return {
             id: r.id,
             url,
