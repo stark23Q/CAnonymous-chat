@@ -750,13 +750,7 @@ export function NoTraceApp() {
     }
   };
 
-  if (!selectedCommunity || !selectedChannel) {
-    return (
-      <div className="grid h-dvh place-items-center bg-background text-sm text-muted-foreground">
-        {loading ? "Opening NoTrace..." : notice}
-      </div>
-    );
-  }
+
 
   return (
     <TooltipProvider>
@@ -778,6 +772,16 @@ export function NoTraceApp() {
             setUser(usr);
           }}
         />
+      ) : (!selectedCommunity || !selectedChannel) ? (
+        <div className="flex h-dvh flex-col items-center justify-center bg-background text-sm text-muted-foreground gap-4">
+          <div>{loading ? "Opening NoTrace..." : notice}</div>
+          {!loading && user?.role === "ADMIN" && (
+            <Button onClick={createCommunity} variant="outline" className="mt-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Community
+            </Button>
+          )}
+        </div>
       ) : (
       <main className="relative z-10 grid h-dvh grid-cols-[64px_minmax(0,1fr)] overflow-hidden bg-transparent text-foreground lg:grid-cols-[72px_280px_minmax(0,1fr)] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <nav className="flex h-full flex-col items-center border-r border-white/5 glass-panel py-3">
