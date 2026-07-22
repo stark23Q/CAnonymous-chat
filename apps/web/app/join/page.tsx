@@ -74,6 +74,7 @@ function JoinPageContent() {
         }
       } catch (err) {
         console.error("Polling error:", err);
+        if (active) setClaimError(err instanceof Error ? err.message : "Failed to complete join process. Please try again or refresh.");
       }
     };
 

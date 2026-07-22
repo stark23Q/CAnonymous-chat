@@ -184,6 +184,9 @@ export function authRoutes(): Router {
         res.status(404).json({ error: "Join request not found." });
         return;
       }
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       res.json({ status: joinRequest.status });
     } catch (error) {
       next(error);

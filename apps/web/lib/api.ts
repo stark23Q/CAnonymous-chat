@@ -39,7 +39,8 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}, isRetry 
   const response = await fetch(`${API_URL}${path}`, {
     ...init,
     headers,
-    credentials: "include"
+    credentials: "include",
+    cache: "no-store"
   });
 
   if (!response.ok) {
